@@ -55,6 +55,9 @@ jobs:
             -d copyright_year="2025" \
             . generated
 
+      - name: Show generated pyproject
+        run: cat generated/pyproject.toml
+
       - name: Install project dependencies
         # Installs all main and development dependencies defined in pyproject.toml
         # into a virtual environment managed by uv.
