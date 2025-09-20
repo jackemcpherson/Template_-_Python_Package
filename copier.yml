@@ -15,7 +15,7 @@ project_slug:
 
 copyright_year:
   type: str
-  default: !python "import datetime; datetime.datetime.utcnow().year"
+  default: "2025"
   when: false
 
 project_name:
