@@ -58,6 +58,9 @@ jobs:
       - name: Show generated pyproject
         run: cat generated/pyproject.toml
 
+      - name: Hide template pyproject
+        run: mv pyproject.toml pyproject.template
+
       - name: Install project dependencies
         # Installs all main and development dependencies defined in pyproject.toml
         # into a virtual environment managed by uv.
