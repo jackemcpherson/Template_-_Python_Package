@@ -39,7 +39,7 @@ jobs:
 
       - name: Install Copier
         # We need Copier to generate the project from the template files.
-        run: uv pip install copier
+        run: uv pip install --system copier
 
       - name: Generate project from template
         # This step uses Copier to generate a project from the template in the
