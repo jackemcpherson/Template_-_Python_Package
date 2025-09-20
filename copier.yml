@@ -6,6 +6,11 @@ project_name:
   type: str
   help: What is the name of your project (e.g., "My Awesome Tool")?
 
+project_slug:
+  type: str
+  help: Slugified package name used for module paths (e.g., my-awesome-tool).
+  default: "{{ project_name | lower | replace(' ', '-') | replace('_', '-') }}"
+
 project_description:
   type: str
   help: Provide a short description of the project.

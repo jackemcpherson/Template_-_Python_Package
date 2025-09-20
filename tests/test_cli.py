@@ -2,8 +2,8 @@
 
 from typer.testing import CliRunner
 
-from {{ project_name | slugify }} import __version__
-from {{ project_name | slugify }}.cli import app
+from {{ project_slug }} import __version__
+from {{ project_slug }}.cli import app
 
 runner = CliRunner()
 

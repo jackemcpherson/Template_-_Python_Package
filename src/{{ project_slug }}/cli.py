@@ -4,7 +4,7 @@ from typing_extensions import Annotated
 
 import typer
 
-from {{ project_name | slugify }} import __version__
+from {{ project_slug }} import __version__
 
 app = typer.Typer()
 
