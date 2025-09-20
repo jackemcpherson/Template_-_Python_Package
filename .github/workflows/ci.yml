@@ -55,9 +55,6 @@ jobs:
             -d copyright_year="2025" \
             . generated
 
-      - name: Show generated pyproject
-        run: cat generated/pyproject.toml
-
       - name: Hide template pyproject
         run: mv pyproject.toml pyproject.template
 
