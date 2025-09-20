@@ -58,7 +58,7 @@ jobs:
         # Installs all main and development dependencies defined in pyproject.toml
         # into a virtual environment managed by uv.
         working-directory: ./generated
-        run: uv pip sync --all-extras
+        run: uv sync --all-extras --dev
 
       - name: Check formatting with Ruff
         working-directory: ./generated
