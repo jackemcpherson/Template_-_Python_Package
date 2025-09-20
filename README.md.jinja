@@ -1,0 +1,49 @@
+# {{ project_name }}
+
+{{ project_description }}
+
+## Overview
+
+This project is a modern, production-ready Python package scaffolded from an opinionated Copier template. It uses a high-performance technology stack designed for developer productivity and robust code quality.
+
+- **CLI Framework**: Typer
+- **Package Management**: uv
+- **Code Quality**: ruff, mypy, bandit
+- **Testing**: pytest with coverage
+- **Build System**: setuptools
+- **CI/CD**: GitHub Actions
+
+## Developer Experience
+
+This project includes a `Makefile` to streamline common development tasks.
+
+| Command | Description |
+| --- | --- |
+| `make install` | Creates a virtual environment and installs all project dependencies. |
+| `make lint` | Formats the code and runs the linter using ruff. |
+| `make test` | Executes the test suite with pytest and generates a coverage report. |
+| `make security` | Scans the codebase for security vulnerabilities using bandit. |
+| `make check-all` | Sequentially runs the lint, test, and security checks. |
+| `make run` | Runs the CLI application (pass args with `ARGS="--name Alice"`). |
+| `make build` | Builds the source distribution (sdist) and wheel. |
+| `make publish` | Builds and publishes the package to PyPI. |
+
+## Getting Started
+
+Install dependencies:
+
+```bash
+make install
+```
+
+Run the CLI:
+
+```bash
+make run ARGS="--name World"
+```
+
+Run quality checks:
+
+```bash
+make check-all
+```

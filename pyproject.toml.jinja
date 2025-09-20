@@ -1,0 +1,80 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "{{ package_name }}"
+version = "{{ initial_version }}"
+description = "{{ project_description }}"
+authors = [
+    { name = "{{ author_name }}", email = "{{ author_email }}" },
+]
+readme = "README.md"
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "typer[all]>=0.12.3",
+]
+
+[project.urls]
+Homepage = "https://github.com/{{ github_username }}/{{ project_slug }}"
+Repository = "https://github.com/{{ github_username }}/{{ project_slug }}"
+
+[project.scripts]
+"{{ package_name }}" = "{{ package_name }}.cli:app"
+
+[project.optional-dependencies]
+dev = [
+    "bandit",
+    "build",
+    "mypy",
+    "pytest",
+    "pytest-cov",
+    "ruff",
+    "twine",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "A",
+    "B",
+    "C4",
+    "E",
+    "F",
+    "N",
+    "S",
+    "TID",
+    "UP",
+]
+ignore = ["D104", "D203", "D213", "S101", "T201"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.mypy]
+strict = true
+packages = ["{{ package_name }}"]
+
+[[tool.mypy.overrides]]
+module = "typer.*"
+ignore_missing_imports = true
+
+[tool.bandit]
+targets = ["src"]
+exclude_dirs = ["tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov={{ package_name }} --cov-report=term-missing --cov-report=html"

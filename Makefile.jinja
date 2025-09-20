@@ -1,0 +1,51 @@
+# Makefile
+
+.PHONY: help install lint test security check-all run build publish
+
+help:
+	@echo "Available commands:"
+	@echo "  install    - Set up the environment and install dependencies"
+	@echo "  lint       - Run ruff for formatting and linting"
+	@echo "  test       - Run pytest with coverage"
+	@echo "  security   - Run bandit for security scanning"
+	@echo "  check-all  - Run all checks (lint, test, security)"
+	@echo "  run        - Run the CLI application (pass with ARGS=...)"
+	@echo "  build      - Build the package wheels and sdist"
+	@echo "  publish    - Publish the package to PyPI"
+
+install:
+	@echo ">>> Synchronizing dependencies with uv..."
+	uv sync --all-extras
+	@echo "✅ Environment is ready."
+
+lint:
+	@echo ">>> Running ruff formatter and linter..."
+	uv run ruff format .
+	uv run ruff check .
+	@echo "✅ Linting complete."
+
+test:
+	@echo ">>> Running tests with pytest and coverage..."
+	uv run pytest
+	@echo "✅ Testing complete. See htmlcov/ for detailed report."
+
+security:
+	@echo ">>> Running bandit security scanner..."
+	uv run bandit -r src
+	@echo "✅ Security scan complete."
+
+check-all: lint test security
+
+run:
+	@echo ">>> Running the CLI application..."
+	uv run {{ package_name }} -- $(ARGS)
+
+build:
+	@echo ">>> Building source and wheel distributions..."
+	uv run python -m build
+	@echo "✅ Package built in dist/."
+
+publish: build
+	@echo ">>> Publishing to PyPI..."
+	uv run twine upload dist/*
+	@echo "✅ Published."

@@ -1,0 +1,38 @@
+"""Command-line interface for the {{ project_name }} package."""
+
+from typing import Optional
+
+import typer
+from typing_extensions import Annotated
+
+from {{ package_name }} import __version__
+
+app = typer.Typer()
+
+
+def version_callback(value: bool) -> None:
+    """Prints the version of the package and exits."""
+    if value:
+        typer.echo(f"{{ project_name }} Version: {__version__}")
+        raise typer.Exit()
+
+
+@app.command()
+def main(
+    name: Annotated[str, typer.Option(help="The name to greet.")] = "World",
+    version: Annotated[
+        Optional[bool],
+        typer.Option(
+            "--version",
+            callback=version_callback,
+            is_eager=True,
+            help="Show the application's version and exit.",
+        ),
+    ] = None,
+) -> None:
+    """A simple CLI that greets the user."""
+    typer.echo(f"Hello {name}")
+
+
+if __name__ == "__main__":
+    app()
