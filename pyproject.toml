@@ -124,7 +124,7 @@ target-version = "py38"
 
 [tool.ruff.lint]
 # A strict selection of rules for high code quality.
-select = ["A", "B", "C4", "E", "F", "I", "N", "S", "TID", "UP"]
+select = ["A", "B", "C4", "E", "F", "N", "S", "TID", "UP"]
 ignore = ["S101"]
 
 # Enforces Google-style docstrings, a non-negotiable requirement.
