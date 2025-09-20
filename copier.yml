@@ -1,0 +1,24 @@
+# copier.yml
+# This file configures the prompts that Copier will present to the user
+# when generating a new project from this template.
+
+project_name:
+  type: str
+  help: What is the name of your project (e.g., "My Awesome Tool")?
+
+project_description:
+  type: str
+  help: Provide a short description of the project.
+
+author_name:
+  type: str
+  help: What is your full name?
+
+author_email:
+  type: str
+  help: What is your email address?
+
+initial_version:
+  type: str
+  help: What is the initial version for the project?
+  default: "0.1.0"

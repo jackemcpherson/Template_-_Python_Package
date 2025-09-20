@@ -1,0 +1,81 @@
+# This GitHub Actions workflow validates the Copier template by:
+# 1. Generating a new project from the template.
+# 2. Installing all dependencies using uv.
+# 3. Running a comprehensive suite of checks (formatting, linting, type checking, security scanning, and testing).
+#
+# It runs on pushes to the main branch, on pull requests, and can also be triggered manually.
+
+name: Lint, Test, and Build
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        # Installs the uv tool from Astral, which will be used for all subsequent
+        # dependency management and script running steps.
+        uses: astral-sh/setup-uv@v1
+        with:
+          # Pin a specific version of uv for reproducible builds.
+          uv-version: "latest"
+
+      - name: Install Copier
+        # We need Copier to generate the project from the template files.
+        run: uv pip install copier
+
+      - name: Generate project from template
+        # This step uses Copier to generate a project from the template in the
+        # current repository. It runs non-interactively, passing dummy data.
+        # This is a crucial validation step to ensure the template itself is valid.
+        run: |
+          uvx --from copier copier copy --trust --force \
+            -d project_name="Continuous Integration App" \
+            -d project_description="Generated during CI to validate the template." \
+            -d author_name="CI Bot" \
+            -d author_email="ci@example.com" \
+            -d initial_version="0.1.0" \
+            . generated
+
+      - name: Install project dependencies
+        # Installs all main and development dependencies defined in pyproject.toml
+        # into a virtual environment managed by uv.
+        working-directory: ./generated
+        run: uv pip sync --all-extras
+
+      - name: Check formatting with Ruff
+        working-directory: ./generated
+        run: uv run ruff format --check .
+
+      - name: Lint with Ruff
+        working-directory: ./generated
+        run: uv run ruff check .
+
+      - name: Type check with MyPy
+        working-directory: ./generated
+        run: uv run mypy .
+
+      - name: Scan for security vulnerabilities with Bandit
+        working-directory: ./generated
+        run: uv run bandit -c pyproject.toml -r src
+
+      - name: Run tests with Pytest
+        working-directory: ./generated
+        run: uv run pytest
