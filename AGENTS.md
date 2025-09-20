@@ -13,7 +13,7 @@ Use Hatch with uv to manage environments. Run `hatch env create` once to provisi
 - `hatch build`: produces sdist and wheel artifacts in `dist/`.
 
 ## Coding Style & Naming Conventions
-Follow PEP 8 with 4-space indentation and 88-character soft limits enforced by Ruff. Name packages with lowercase, hyphen-free slugs; modules use snake_case and classes use CapWords. CLI commands and options should read naturally, as seen in `cli.py`. Keep docstrings narrative and prefer Typer’s Annotated hints for argument metadata. Run `ruff format` before commits and avoid manual whitespace tweaks that differ from tooling output.
+Follow PEP 8 with 4-space indentation and 88-character soft limits enforced by Ruff. Name packages with lowercase, underscore-only slugs; modules use snake_case and classes use CapWords. CLI commands and options should read naturally, as seen in `cli.py`. Keep docstrings narrative and prefer Typer’s Annotated hints for argument metadata. Run `ruff format` before commits and avoid manual whitespace tweaks that differ from tooling output.
 
 ## Testing Guidelines
 Tests use pytest with typer.testing’s `CliRunner`. Place files under `tests/` and name them `test_<feature>.py`. Target high coverage on CLI behaviors; enforce at least 90% by passing `--cov=[[ project_slug ]]` locally and in CI when suites expand. Prefer deterministic fixtures so Copier-generated runs remain reproducible.
