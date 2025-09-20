@@ -10,14 +10,14 @@ build-backend = "hatchling.build"
 # This information is used by packaging tools and displayed on PyPI.
 # Jinja2 templates are used here to insert values from copier.yml.
 [project]
-name = "{{ project_slug }}"
-description = "{{ project_description }}"
+name = "[[ project_slug ]]"
+description = "[[ project_description ]]"
 readme = "README.md"
 requires-python = ">=3.8"
 license = { file = "LICENSE" }
 keywords = ["cli", "copier", "template"]
 authors = [
-  { name = "{{ author_name }}", email = "{{ author_email }}" },
+  { name = "[[ author_name ]]", email = "[[ author_email ]]" },
 ]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -52,13 +52,13 @@ dev = [
 # When the package is installed, a command named after the project will be
 # available, which executes the `app` function in the `cli` module.
 [project.scripts]
-"{{ project_slug }}" = "{{ project_slug }}.cli:app"
+"[[ project_slug ]]" = "[[ project_slug ]].cli:app"
 
 # Project URLs to be displayed on PyPI.
 [project.urls]
-Homepage = "https://github.com/your-username/{{ project_slug }}"
-"Bug Tracker" = "https://github.com/your-username/{{ project_slug }}/issues"
-Repository = "https://github.com/your-username/{{ project_slug }}"
+Homepage = "https://github.com/your-username/[[ project_slug ]]"
+"Bug Tracker" = "https://github.com/your-username/[[ project_slug ]]/issues"
+Repository = "https://github.com/your-username/[[ project_slug ]]"
 
 # --- Hatch Configuration ---
 # Hatch is used for project management, environment management, and task running.
@@ -66,12 +66,12 @@ Repository = "https://github.com/your-username/{{ project_slug }}"
 # Configures Hatch to source the project version from the package's __init__.py.
 # This enables single-sourcing the version number.
 [tool.hatch.version]
-path = "src/{{ project_slug }}/__init__.py"
+path = "src/[[ project_slug ]]/__init__.py"
 
 # Configures the wheel build target to correctly handle the 'src' layout.
 # It tells Hatchling where to find the importable package directory.
 [tool.hatch.build.targets.wheel]
-packages = ["src/{{ project_slug }}"]
+packages = ["src/[[ project_slug ]]"]
 
 # Configuration for Hatch environments.
 [tool.hatch.envs.default]
@@ -156,14 +156,14 @@ minversion = "6.0"
 # --cov: enable coverage reporting for the specified package
 # --cov-report: specify coverage report format
 # --cov-fail-under: fail the test run if coverage is below the threshold
-addopts = "-ra -q --cov={{ project_slug }} --cov-report=term-missing --cov-fail-under=80"
+addopts = "-ra -q --cov=[[ project_slug ]] --cov-report=term-missing --cov-fail-under=80"
 testpaths = [
   "tests",
 ]
 
 # Coverage.py Configuration
 [tool.coverage.run]
-source = ["{{ project_slug }}"]
+source = ["[[ project_slug ]]"]
 # Omit test files from the coverage source to avoid skewing results.
 omit = ["tests/*"]
 

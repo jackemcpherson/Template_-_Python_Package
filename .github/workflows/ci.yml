@@ -24,10 +24,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python {% raw %}${{ matrix.python-version }}{% endraw %}
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: {% raw %}${{ matrix.python-version }}{% endraw %}
+          python-version: ${{ matrix.python-version }}
 
       - name: Install uv
         # Installs the uv tool from Astral, which will be used for all subsequent

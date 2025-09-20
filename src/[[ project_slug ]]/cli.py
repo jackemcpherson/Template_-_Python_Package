@@ -1,10 +1,10 @@
-"""Command-line interface for the {{ project_name }} package."""
+"""Command-line interface for the [[ project_name ]] package."""
 
 from typing_extensions import Annotated
 
 import typer
 
-from {{ project_slug }} import __version__
+from [[ project_slug ]] import __version__
 
 app = typer.Typer()
 
@@ -12,7 +12,7 @@ app = typer.Typer()
 def version_callback(value: bool) -> None:
     """Prints the version of the package."""
     if value:
-        typer.echo(f"{{ project_name }} Version: {__version__}")
+        typer.echo(f"[[ project_name ]] Version: {__version__}")
         raise typer.Exit()
 
 

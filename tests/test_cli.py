@@ -2,8 +2,8 @@
 
 from typer.testing import CliRunner
 
-from {{ project_slug }} import __version__
-from {{ project_slug }}.cli import app
+from [[ project_slug ]] import __version__
+from [[ project_slug ]].cli import app
 
 runner = CliRunner()
 
@@ -12,7 +12,7 @@ def test_app_version() -> None:
     """Test the --version option."""
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0
-    assert f"{{ project_name }} Version: {__version__}" in result.stdout
+    assert f"[[ project_name ]] Version: {__version__}" in result.stdout
 
 
 def test_app_default_greeting() -> None:

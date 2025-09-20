@@ -40,7 +40,7 @@ check-all:
 # Runs the CLI application. Arguments can be passed via the ARGS variable.
 # Example: make run ARGS="--name Alice"
 run:
-	hatch run {{ project_slug }} -- $(ARGS)
+	hatch run [[ project_slug ]] -- $(ARGS)
 
 # Builds the source distribution (sdist) and wheel for the package.
 build:

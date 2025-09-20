@@ -1,6 +1,6 @@
-# {{ project_name }}
+# [[ project_name ]]
 
-{{ project_description }}
+[[ project_description ]]
 
 ## Overview
 
@@ -18,8 +18,8 @@ This project is a Python command-line tool built using a modern, production-read
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-username/{{ project_slug }}
-   cd {{ project_slug }}
+   git clone https://github.com/your-username/[[ project_slug ]]
+   cd [[ project_slug ]]
    ```
 2. **Create the virtual environment and install dependencies:**
    This command uses Hatch to create a virtual environment (using uv as the installer) and install all project dependencies defined in `pyproject.toml`.
@@ -44,7 +44,7 @@ This project uses a Makefile to provide simple, memorable commands for common de
 | make test | `hatch run test` | Runs the test suite with Pytest and reports coverage. |
 | make security | `hatch run security` | Scans for security vulnerabilities with Bandit. |
 | make check-all | `hatch run check-all` | Runs all checks in sequence (lint, type, security, test). |
-| make run | `hatch run {{ project_slug }} --` | Executes the CLI application with optional arguments. |
+| make run | `hatch run [[ project_slug ]] --` | Executes the CLI application with optional arguments. |
 | make build | `hatch build` | Builds the source distribution and wheel. |
 | make publish | `hatch build && twine upload dist/*` | Builds and publishes the package to PyPI. |
 
