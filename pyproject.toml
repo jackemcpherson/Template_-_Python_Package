@@ -19,6 +19,7 @@ keywords = ["cli", "copier", "template"]
 authors = [
   { name = "[[ author_name ]]", email = "[[ author_email ]]" },
 ]
+dynamic = ["version"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
