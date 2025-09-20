@@ -61,37 +61,37 @@ jobs:
       - name: Install project dependencies
         # Installs all main and development dependencies defined in pyproject.toml
         # into a virtual environment managed by uv.
+        working-directory: ./generated
         env:
-          UV_PROJECT: ${{ github.workspace }}/generated
           UV_NO_CONFIG: "1"
         run: uv sync --all-extras --dev
 
       - name: Check formatting with Ruff
+        working-directory: ./generated
         env:
-          UV_PROJECT: ${{ github.workspace }}/generated
           UV_NO_CONFIG: "1"
         run: uv run ruff format --check .
 
       - name: Lint with Ruff
+        working-directory: ./generated
         env:
-          UV_PROJECT: ${{ github.workspace }}/generated
           UV_NO_CONFIG: "1"
         run: uv run ruff check .
 
       - name: Type check with MyPy
+        working-directory: ./generated
         env:
-          UV_PROJECT: ${{ github.workspace }}/generated
           UV_NO_CONFIG: "1"
         run: uv run mypy .
 
       - name: Scan for security vulnerabilities with Bandit
+        working-directory: ./generated
         env:
-          UV_PROJECT: ${{ github.workspace }}/generated
           UV_NO_CONFIG: "1"
         run: uv run bandit -c pyproject.toml -r src
 
       - name: Run tests with Pytest
+        working-directory: ./generated
         env:
-          UV_PROJECT: ${{ github.workspace }}/generated
           UV_NO_CONFIG: "1"
         run: uv run pytest
