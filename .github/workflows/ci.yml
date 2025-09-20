@@ -63,29 +63,35 @@ jobs:
         # into a virtual environment managed by uv.
         env:
           UV_PROJECT: ${{ github.workspace }}/generated
+          UV_NO_CONFIG: "1"
         run: uv sync --all-extras --dev
 
       - name: Check formatting with Ruff
         env:
           UV_PROJECT: ${{ github.workspace }}/generated
+          UV_NO_CONFIG: "1"
         run: uv run ruff format --check .
 
       - name: Lint with Ruff
         env:
           UV_PROJECT: ${{ github.workspace }}/generated
+          UV_NO_CONFIG: "1"
         run: uv run ruff check .
 
       - name: Type check with MyPy
         env:
           UV_PROJECT: ${{ github.workspace }}/generated
+          UV_NO_CONFIG: "1"
         run: uv run mypy .
 
       - name: Scan for security vulnerabilities with Bandit
         env:
           UV_PROJECT: ${{ github.workspace }}/generated
+          UV_NO_CONFIG: "1"
         run: uv run bandit -c pyproject.toml -r src
 
       - name: Run tests with Pytest
         env:
           UV_PROJECT: ${{ github.workspace }}/generated
+          UV_NO_CONFIG: "1"
         run: uv run pytest
