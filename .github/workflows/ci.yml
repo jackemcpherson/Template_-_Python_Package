@@ -64,34 +64,34 @@ jobs:
         working-directory: ./generated
         env:
           UV_NO_CONFIG: "1"
-        run: uv sync --all-extras --dev
+        run: uv --config-file /dev/null sync --all-extras --dev
 
       - name: Check formatting with Ruff
         working-directory: ./generated
         env:
           UV_NO_CONFIG: "1"
-        run: uv run ruff format --check .
+        run: uv --config-file /dev/null run ruff format --check .
 
       - name: Lint with Ruff
         working-directory: ./generated
         env:
           UV_NO_CONFIG: "1"
-        run: uv run ruff check .
+        run: uv --config-file /dev/null run ruff check .
 
       - name: Type check with MyPy
         working-directory: ./generated
         env:
           UV_NO_CONFIG: "1"
-        run: uv run mypy .
+        run: uv --config-file /dev/null run mypy .
 
       - name: Scan for security vulnerabilities with Bandit
         working-directory: ./generated
         env:
           UV_NO_CONFIG: "1"
-        run: uv run bandit -c pyproject.toml -r src
+        run: uv --config-file /dev/null run bandit -c pyproject.toml -r src
 
       - name: Run tests with Pytest
         working-directory: ./generated
         env:
           UV_NO_CONFIG: "1"
-        run: uv run pytest
+        run: uv --config-file /dev/null run pytest
