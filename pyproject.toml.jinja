@@ -75,6 +75,9 @@ ignore_missing_imports = true
 targets = ["src"]
 exclude_dirs = ["tests"]
 
+[tool.setuptools.package-data]
+"{{ package_name }}" = ["py.typed"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--cov={{ package_name }} --cov-report=term-missing --cov-report=html"
