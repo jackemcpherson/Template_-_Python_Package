@@ -43,6 +43,10 @@ jobs:
         working-directory: generated
         run: uv sync --all-extras
 
+      - name: Format code with ruff
+        working-directory: generated
+        run: uv run ruff format .
+
       - name: Check formatting with ruff
         working-directory: generated
         run: uv run ruff format --check .
