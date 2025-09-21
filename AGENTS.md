@@ -1,25 +1,208 @@
-# Repository Guidelines
+# Development Guidelines & AI Agent Instructions
 
-## Project Structure & Module Organization
-The template root holds `copier.yml` for prompts, `pyproject.toml.jinja` for packaging metadata, and `README.md` describing the template itself. Generated sources live under `src/{{ package_name }}/`, populated from `.jinja` files such as `cli.py.jinja`. Tests mirror that layout in `tests/`, and each Jinja file becomes a concrete Python module when Copier renders a project. GitHub Actions automation resides in `.github/workflows/ci.yml`.
+This document provides guidelines for development and AI assistant interactions for this Python CLI project.
 
-## Build, Test, and Development Commands
-Use uv exclusively in generated projects. After rendering, run `make install` (backed by `uv sync`) to provision dependencies. Key commands provided by the template `Makefile`:
-- `make lint` – runs `uv run ruff format` and `uv run ruff check`.
-- `make test` – executes pytest with coverage through `uv run pytest`.
-- `make security` – runs `uv run bandit -r src`.
-- `make check-all` – chains lint, test, and security checks.
-- `make run` – launches the Typer CLI (`ARGS="--name Alice"` forwards options).
-- `make build` – invokes `uv run python -m build` to produce sdist/wheel artifacts.
+## Project Overview
 
-## Coding Style & Naming Conventions
-Generated packages derive `package_name` by slugifying `project_name` into underscores (PEP 503 safe). Modules use snake_case; Typer commands should keep human-friendly option names. Ruff enforces 88-character lines and Google-style docstrings while ignoring assert usage in tests. Avoid reintroducing hatch scripts or alternative tooling in template files.
+This is a modern Python CLI application built with:
+- **Typer** for CLI framework
+- **Rich** for terminal UI enhancements
+- **uv** for dependency management
+- **ruff** for linting and formatting
+- **mypy** for type checking
+- **pytest** for testing
 
-## Testing Guidelines
-Tests rely on pytest and `typer.testing.CliRunner`. Store them under `tests/` (Copier will render from `test_*.py.jinja`). Coverage is enabled by default via pytest configuration in `pyproject.toml.jinja` (`--cov={{ package_name }}`). When extending the template, ensure new utilities remain testable without network access and prefer deterministic CLI outputs.
+## Code Standards
 
-## CI Pipeline Expectations
-`.github/workflows/ci.yml` renders the template into `generated/`, runs `uv sync --all-extras`, and executes linting, typing, security, tests, and a build step using `uv run`. Maintain parity with the Dockerized web app template so contributors experience the same tooling across repositories.
+### General Principles
 
-## Commit & Pull Request Guidelines
-Use Conventional Commit prefixes (`feat:`, `fix:`, `chore:`) and keep changes focused. Before pushing, run `make check-all` inside a rendered project when you alter template logic. Pull requests should document the generated project settings used for validation and link related tickets or templates when applicable.
+1. **Type Safety**: Use type hints everywhere. Enable mypy strict mode.
+2. **Code Quality**: Follow ruff's recommendations. Use `select = ["ALL"]` with minimal ignores.
+3. **Testing**: Maintain >80% test coverage. Write tests for all public APIs.
+4. **Documentation**: Use Google-style docstrings for all public functions and classes.
+5. **Security**: Run bandit security scans. Never commit secrets.
+
+### Code Style
+
+- **Formatting**: Use ruff format (compatible with Black)
+- **Line length**: 88 characters
+- **Imports**: Use isort-compatible import ordering via ruff
+- **Quotes**: Double quotes preferred
+- **Type hints**: Required for all function parameters and return values
+
+### CLI Development
+
+- **Framework**: Use Typer exclusively for CLI functionality
+- **Output**: Use Rich Console for all output (no print statements)
+- **Error Handling**: Raise exceptions with clear messages, let Typer handle exit codes
+- **Commands**: Organize commands in submodules under `commands/`
+- **Configuration**: Use TOML files with validation
+
+### File Organization
+
+```
+src/{{ package_name }}/
+├── __init__.py          # Package initialization, version info
+├── __main__.py          # Entry point for `python -m package`
+├── cli.py               # Main CLI application and global options
+├── commands/            # Subcommand modules
+│   ├── __init__.py      # Command registration
+│   ├── config.py        # Configuration commands
+│   └── data.py          # Data processing commands
+├── core.py              # Business logic (pure functions)
+├── config.py            # Configuration handling
+├── utils.py             # Utility functions
+└── py.typed             # Type checking marker
+```
+
+## Development Workflow
+
+### Setting Up
+
+1. Clone repository
+2. Run `make install` to set up environment with uv
+3. Run `make check-all` to verify setup
+
+### Making Changes
+
+1. Create feature branch from main
+2. Make changes following code standards
+3. Add/update tests
+4. Run `make check-all` to verify quality
+5. Commit with descriptive messages
+6. Submit pull request
+
+### Quality Gates
+
+Before committing, ensure:
+- [ ] `make lint` passes (ruff format + check, mypy)
+- [ ] `make test` passes with >80% coverage
+- [ ] `make security` passes (bandit scan)
+- [ ] All new code has type hints
+- [ ] All new public APIs have docstrings
+- [ ] Tests cover new functionality
+
+## AI Assistant Guidelines
+
+When working with AI assistants on this project:
+
+### Code Generation
+
+- **Request type hints**: Always ask for complete type annotations
+- **Specify framework**: Mention we use Typer for CLI, Rich for output
+- **Testing focus**: Request tests for new functionality
+- **Security awareness**: Remind about security best practices
+
+### Code Review
+
+- Check for type safety and mypy compliance
+- Verify CLI commands use Typer patterns correctly
+- Ensure Rich is used for output instead of print
+- Validate error handling and exit codes
+- Review test coverage and quality
+
+### Common Patterns
+
+#### CLI Command Structure
+```python
+import typer
+from rich.console import Console
+from typing import Annotated
+
+console = Console()
+
+def command_name(
+    param: Annotated[str, typer.Argument(help="Description")],
+    option: Annotated[bool, typer.Option("--flag", help="Description")] = False,
+) -> None:
+    """Command description.
+
+    Args:
+        param: Parameter description.
+        option: Option description.
+    """
+    # Implementation here
+    console.print("Success!", style="green")
+```
+
+#### Error Handling
+```python
+def process_data(file_path: str) -> dict[str, Any]:
+    """Process data file.
+
+    Args:
+        file_path: Path to the data file.
+
+    Returns:
+        Processed data dictionary.
+
+    Raises:
+        FileNotFoundError: If file doesn't exist.
+        ValueError: If file format is invalid.
+    """
+    if not Path(file_path).exists():
+        raise FileNotFoundError(f"File not found: {file_path}")
+    # Implementation here
+```
+
+#### Testing CLI Commands
+```python
+from typer.testing import CliRunner
+from myapp.cli import app
+
+def test_command():
+    runner = CliRunner()
+    result = runner.invoke(app, ["command", "arg"])
+    assert result.exit_code == 0
+    assert "expected output" in result.stdout
+```
+
+## Dependencies
+
+### Core Dependencies
+- `typer[all]` - CLI framework with all features
+- `rich` - Terminal formatting and UI (optional based on template config)
+- `toml` - Configuration file handling (optional based on template config)
+
+### Development Dependencies
+- `pytest` + `pytest-cov` - Testing framework with coverage
+- `mypy` - Type checking
+- `ruff` - Linting and formatting
+- `bandit` - Security scanning
+- `build` + `twine` - Package building and publishing
+
+## Common Issues
+
+### Type Checking
+- Import types from `typing` or use built-in generics (Python 3.9+)
+- Use `Annotated` with Typer for parameter documentation
+- Add `# type: ignore` sparingly with explanation comments
+
+### CLI Behavior
+- Use `typer.Exit()` for clean exits
+- Handle exceptions at the CLI layer, not in core logic
+- Use Rich progressbars for long-running operations
+
+### Testing
+- Use temporary directories for file operations
+- Mock external dependencies
+- Test both success and error cases
+- Use fixtures for common test data
+
+## Release Process
+
+1. Update version in `pyproject.toml`
+2. Update `CHANGELOG.md` with release notes
+3. Run `make check-all` to verify quality
+4. Run `make build` to create distribution packages
+5. Tag release with `git tag v<version>`
+6. Push tags to trigger CI/CD
+7. Run `make publish` to upload to PyPI (manual step)
+
+## Resources
+
+- [Typer Documentation](https://typer.tiangolo.com/)
+- [Rich Documentation](https://rich.readthedocs.io/)
+- [uv Documentation](https://docs.astral.sh/uv/)
+- [Python Type Hints](https://docs.python.org/3/library/typing.html)
+- [pytest Documentation](https://docs.pytest.org/)

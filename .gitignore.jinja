@@ -1,14 +1,8 @@
-# .gitignore
-
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
-
-# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -22,17 +16,13 @@ parts/
 sdist/
 var/
 wheels/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-*.manifest
-*.spec
-
-# Hatch
-.hatch/
+MANIFEST
 
 # PyInstaller
-# Usually these files are created by pyinstaller, if you are using it.
 *.manifest
 *.spec
 
@@ -53,6 +43,7 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+cover/
 
 # Translations
 *.mo
@@ -75,6 +66,7 @@ instance/
 docs/_build/
 
 # PyBuilder
+.pybuilder/
 target/
 
 # Jupyter Notebook
@@ -87,14 +79,16 @@ ipython_config.py
 # pyenv
 .python-version
 
+# pipenv
+Pipfile.lock
+
 # poetry
 poetry.lock
 
 # pdm
-pdm.lock
 .pdm.toml
 
-# PEP 582; used by PDM.
+# PEP 582
 __pypackages__/
 
 # Celery stuff
@@ -115,7 +109,7 @@ venv.bak/
 
 # Spyder project settings
 .spyderproject
-.spyderworkspace
+.spyproject
 
 # Rope project settings
 .ropeproject
@@ -131,12 +125,36 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# pytype
+# pytype static type analyzer
 .pytype/
 
 # Cython debug symbols
 cython_debug/
 
-# VSCode
+# PyCharm
+.idea/
+
+# VS Code
 .vscode/
-.history/
+
+# Ruff
+.ruff_cache/
+
+# uv
+.uv_cache/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Project specific
+*.log
+temp/
+tmp/
+.temp/
+.tmp/

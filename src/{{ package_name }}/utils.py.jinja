@@ -1,0 +1,287 @@
+"""Utility functions for {{ package_name }}."""
+
+import re
+import sys
+from pathlib import Path
+from typing import Any, Dict, Optional, Union
+
+
+def validate_file_path(path: Union[str, Path], must_exist: bool = True) -> Path:
+    """Validate and normalize a file path.
+
+    Args:
+        path: File path to validate.
+        must_exist: Whether the file must exist.
+
+    Returns:
+        Normalized Path object.
+
+    Raises:
+        ValueError: If path is invalid.
+        FileNotFoundError: If file must exist but doesn't.
+    """
+    if not path:
+        raise ValueError("Path cannot be empty")
+
+    path_obj = Path(path).resolve()
+
+    if must_exist and not path_obj.exists():
+        raise FileNotFoundError(f"File does not exist: {path_obj}")
+
+    return path_obj
+
+
+def safe_filename(filename: str) -> str:
+    """Convert a string to a safe filename.
+
+    Args:
+        filename: Original filename.
+
+    Returns:
+        Safe filename with invalid characters replaced.
+    """
+    # Replace invalid characters with underscores
+    safe_name = re.sub(r'[<>:"/\\|?*]', '_', filename)
+
+    # Remove any control characters
+    safe_name = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', safe_name)
+
+    # Ensure it's not empty and doesn't start/end with spaces or dots
+    safe_name = safe_name.strip('. ')
+
+    if not safe_name:
+        safe_name = "unnamed"
+
+    return safe_name
+
+
+def truncate_string(text: str, max_length: int = 50, suffix: str = "...") -> str:
+    """Truncate a string to a maximum length.
+
+    Args:
+        text: Text to truncate.
+        max_length: Maximum length including suffix.
+        suffix: Suffix to add when truncating.
+
+    Returns:
+        Truncated string.
+    """
+    if len(text) <= max_length:
+        return text
+
+    return text[:max_length - len(suffix)] + suffix
+
+
+def parse_size_string(size_str: str) -> int:
+    """Parse a human-readable size string to bytes.
+
+    Args:
+        size_str: Size string like "10MB", "1.5GB".
+
+    Returns:
+        Size in bytes.
+
+    Raises:
+        ValueError: If size string format is invalid.
+    """
+    size_str = size_str.upper().strip()
+
+    # Match pattern like "10MB" or "1.5GB"
+    match = re.match(r'^([\d.]+)\s*([KMGT]?B)$', size_str)
+    if not match:
+        raise ValueError(f"Invalid size format: {size_str}")
+
+    value_str, unit = match.groups()
+
+    try:
+        value = float(value_str)
+    except ValueError as e:
+        raise ValueError(f"Invalid numeric value: {value_str}") from e
+
+    multipliers = {
+        'B': 1,
+        'KB': 1024,
+        'MB': 1024 ** 2,
+        'GB': 1024 ** 3,
+        'TB': 1024 ** 4,
+    }
+
+    if unit not in multipliers:
+        raise ValueError(f"Invalid size unit: {unit}")
+
+    return int(value * multipliers[unit])
+
+
+def get_terminal_width() -> int:
+    """Get the current terminal width.
+
+    Returns:
+        Terminal width in characters (default 80 if cannot determine).
+    """
+    try:
+        import shutil
+        return shutil.get_terminal_size().columns
+    except (OSError, AttributeError):
+        return 80
+
+
+def is_debug_mode() -> bool:
+    """Check if debug mode is enabled via environment variables.
+
+    Returns:
+        True if debug mode is enabled.
+    """
+    import os
+    debug_vars = ['DEBUG', 'PYTHONDEBUG', f'{{{package_name.upper()}}}_DEBUG']
+    return any(os.environ.get(var, '').lower() in ('1', 'true', 'yes') for var in debug_vars)
+
+
+def setup_logging(verbose: bool = False, debug: bool = False) -> None:
+    """Set up logging configuration.
+
+    Args:
+        verbose: Enable verbose logging.
+        debug: Enable debug logging.
+    """
+    import logging
+
+    level = logging.DEBUG if debug else (logging.INFO if verbose else logging.WARNING)
+
+    logging.basicConfig(
+        level=level,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+    )
+
+    # Suppress noisy third-party loggers
+    logging.getLogger('urllib3').setLevel(logging.WARNING)
+    logging.getLogger('requests').setLevel(logging.WARNING)
+
+
+def get_version_info() -> Dict[str, Any]:
+    """Get version information for debugging.
+
+    Returns:
+        Dictionary with version information.
+    """
+    from {{ package_name }} import __version__
+
+    return {
+        "{{ package_name }}": __version__,
+        "python": sys.version,
+        "platform": sys.platform,
+    }
+
+
+def confirm_action(message: str, default: bool = False) -> bool:
+    """Prompt user for confirmation.
+
+    Args:
+        message: Message to display.
+        default: Default value if user just presses Enter.
+
+    Returns:
+        True if user confirms, False otherwise.
+    """
+    suffix = " [Y/n]" if default else " [y/N]"
+
+    try:
+        response = input(f"{message}{suffix}: ").strip().lower()
+
+        if not response:
+            return default
+
+        return response in ('y', 'yes', 'true', '1')
+    except (KeyboardInterrupt, EOFError):
+        print()  # New line after interrupt
+        return False
+
+
+def format_duration(seconds: float) -> str:
+    """Format duration in human-readable format.
+
+    Args:
+        seconds: Duration in seconds.
+
+    Returns:
+        Formatted duration string.
+    """
+    if seconds < 1:
+        return f"{seconds * 1000:.0f}ms"
+    elif seconds < 60:
+        return f"{seconds:.1f}s"
+    elif seconds < 3600:
+        minutes = seconds / 60
+        return f"{minutes:.1f}m"
+    else:
+        hours = seconds / 3600
+        return f"{hours:.1f}h"
+
+
+def ensure_directory(path: Union[str, Path]) -> Path:
+    """Ensure a directory exists, creating it if necessary.
+
+    Args:
+        path: Directory path.
+
+    Returns:
+        Path object for the directory.
+
+    Raises:
+        OSError: If directory cannot be created.
+    """
+    path_obj = Path(path)
+    path_obj.mkdir(parents=True, exist_ok=True)
+    return path_obj
+
+
+def read_file_safely(file_path: Union[str, Path], encoding: str = "utf-8") -> Optional[str]:
+    """Read a file safely, returning None if it cannot be read.
+
+    Args:
+        file_path: Path to the file.
+        encoding: File encoding.
+
+    Returns:
+        File contents or None if error.
+    """
+    try:
+        return Path(file_path).read_text(encoding=encoding)
+    except (OSError, UnicodeDecodeError):
+        return None
+
+
+def write_file_safely(
+    file_path: Union[str, Path],
+    content: str,
+    encoding: str = "utf-8",
+    backup: bool = True,
+) -> bool:
+    """Write a file safely with optional backup.
+
+    Args:
+        file_path: Path to the file.
+        content: Content to write.
+        encoding: File encoding.
+        backup: Whether to create a backup if file exists.
+
+    Returns:
+        True if successful, False otherwise.
+    """
+    try:
+        path_obj = Path(file_path)
+
+        # Create backup if requested and file exists
+        if backup and path_obj.exists():
+            backup_path = path_obj.with_suffix(f"{path_obj.suffix}.bak")
+            path_obj.replace(backup_path)
+
+        # Ensure parent directory exists
+        path_obj.parent.mkdir(parents=True, exist_ok=True)
+
+        # Write the file
+        path_obj.write_text(content, encoding=encoding)
+        return True
+
+    except OSError:
+        return False

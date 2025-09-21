@@ -1,0 +1,242 @@
+{% if include_config -%}
+"""Configuration management for {{ package_name }}.
+
+Handles loading, saving, and validating configuration files.
+"""
+
+import os
+from pathlib import Path
+from typing import Any, Dict
+
+import toml
+
+
+def get_config_path() -> Path:
+    """Get the default configuration file path.
+
+    Returns:
+        Path to the default configuration file.
+    """
+    # Use XDG_CONFIG_HOME if set, otherwise fall back to ~/.config
+    config_home = os.environ.get("XDG_CONFIG_HOME")
+    if config_home:
+        config_dir = Path(config_home) / "{{ package_name }}"
+    else:
+        config_dir = Path.home() / ".{{ package_name }}"
+
+    config_dir.mkdir(parents=True, exist_ok=True)
+    return config_dir / "config.toml"
+
+
+def load_config(config_path: Path) -> Dict[str, Any]:
+    """Load configuration from a TOML file.
+
+    Args:
+        config_path: Path to the configuration file.
+
+    Returns:
+        Configuration dictionary.
+
+    Raises:
+        FileNotFoundError: If configuration file doesn't exist.
+        toml.TomlDecodeError: If configuration file is invalid TOML.
+    """
+    if not config_path.exists():
+        raise FileNotFoundError(f"Configuration file not found: {config_path}")
+
+    try:
+        with config_path.open("r", encoding="utf-8") as f:
+            return toml.load(f)
+    except toml.TomlDecodeError as e:
+        raise toml.TomlDecodeError(f"Invalid TOML in {config_path}: {e}") from e
+
+
+def save_config(config: Dict[str, Any], config_path: Path) -> None:
+    """Save configuration to a TOML file.
+
+    Args:
+        config: Configuration dictionary to save.
+        config_path: Path where to save the configuration.
+
+    Raises:
+        OSError: If file cannot be written.
+    """
+    # Ensure parent directory exists
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with config_path.open("w", encoding="utf-8") as f:
+        toml.dump(config, f)
+
+
+def get_default_config() -> Dict[str, Any]:
+    """Get the default configuration values.
+
+    Returns:
+        Dictionary with default configuration values.
+    """
+    return {
+        "general": {
+            "output_format": "json",
+            "verbose": False,
+            "color": True,
+        },
+        "data": {
+            "default_path": "./data",
+            "batch_size": 100,
+            "max_file_size": "10MB",
+        },
+        "ui": {
+            "table_style": "grid",
+            "progress_bar": True,
+            "timestamps": True,
+        },
+    }
+
+
+def init_config(config_path: Path, force: bool = False) -> None:
+    """Initialize configuration file with default values.
+
+    Args:
+        config_path: Path where to create the configuration file.
+        force: Whether to overwrite existing file.
+
+    Raises:
+        FileExistsError: If file exists and force is False.
+        OSError: If file cannot be written.
+    """
+    if config_path.exists() and not force:
+        raise FileExistsError(f"Configuration file already exists: {config_path}")
+
+    default_config = get_default_config()
+    save_config(default_config, config_path)
+
+
+def merge_config(base_config: Dict[str, Any], override_config: Dict[str, Any]) -> Dict[str, Any]:
+    """Merge two configuration dictionaries.
+
+    Args:
+        base_config: Base configuration dictionary.
+        override_config: Configuration values to override.
+
+    Returns:
+        Merged configuration dictionary.
+    """
+    result = base_config.copy()
+
+    for key, value in override_config.items():
+        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+            result[key] = merge_config(result[key], value)
+        else:
+            result[key] = value
+
+    return result
+
+
+def validate_config(config: Dict[str, Any]) -> list[str]:
+    """Validate configuration values.
+
+    Args:
+        config: Configuration dictionary to validate.
+
+    Returns:
+        List of validation error messages (empty if valid).
+    """
+    errors = []
+
+    # Validate general section
+    if "general" in config:
+        general = config["general"]
+
+        # Check output_format
+        if "output_format" in general:
+            valid_formats = ["json", "yaml", "csv"]
+            if general["output_format"] not in valid_formats:
+                errors.append(f"Invalid output_format: {general['output_format']}. Must be one of: {valid_formats}")
+
+        # Check boolean values
+        for bool_key in ["verbose", "color"]:
+            if bool_key in general and not isinstance(general[bool_key], bool):
+                errors.append(f"Invalid {bool_key}: must be true or false")
+
+    # Validate data section
+    if "data" in config:
+        data = config["data"]
+
+        # Check batch_size
+        if "batch_size" in data:
+            if not isinstance(data["batch_size"], int) or data["batch_size"] <= 0:
+                errors.append("Invalid batch_size: must be a positive integer")
+
+        # Check max_file_size format
+        if "max_file_size" in data:
+            size_str = str(data["max_file_size"])
+            if not (size_str.endswith(("B", "KB", "MB", "GB")) and size_str[:-2].replace(".", "").isdigit()):
+                errors.append("Invalid max_file_size: must be in format like '10MB', '1.5GB'")
+
+    # Validate UI section
+    if "ui" in config:
+        ui = config["ui"]
+
+        # Check table_style
+        if "table_style" in ui:
+            valid_styles = ["grid", "simple", "ascii", "rounded"]
+            if ui["table_style"] not in valid_styles:
+                errors.append(f"Invalid table_style: {ui['table_style']}. Must be one of: {valid_styles}")
+
+        # Check boolean values
+        for bool_key in ["progress_bar", "timestamps"]:
+            if bool_key in ui and not isinstance(ui[bool_key], bool):
+                errors.append(f"Invalid {bool_key}: must be true or false")
+
+    return errors
+
+
+def get_config_value(config: Dict[str, Any], key_path: str, default: Any = None) -> Any:
+    """Get a configuration value using dot notation.
+
+    Args:
+        config: Configuration dictionary.
+        key_path: Dot-separated path to the value (e.g., "general.output_format").
+        default: Default value to return if key is not found.
+
+    Returns:
+        Configuration value or default.
+
+    Example:
+        get_config_value(config, "general.output_format", "json")
+    """
+    keys = key_path.split(".")
+    current = config
+
+    for key in keys:
+        if isinstance(current, dict) and key in current:
+            current = current[key]
+        else:
+            return default
+
+    return current
+
+
+def set_config_value(config: Dict[str, Any], key_path: str, value: Any) -> None:
+    """Set a configuration value using dot notation.
+
+    Args:
+        config: Configuration dictionary to modify.
+        key_path: Dot-separated path to the value (e.g., "general.output_format").
+        value: Value to set.
+
+    Example:
+        set_config_value(config, "general.output_format", "yaml")
+    """
+    keys = key_path.split(".")
+    current = config
+
+    # Navigate to the parent of the target key
+    for key in keys[:-1]:
+        if key not in current:
+            current[key] = {}
+        current = current[key]
+
+    # Set the value
+    current[keys[-1]] = value
+{%- endif %}

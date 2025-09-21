@@ -1,29 +1,148 @@
-"""Tests for the CLI application."""
+"""Tests for the main CLI application."""
 
 from typer.testing import CliRunner
 
-from {{ package_name }} import __version__
 from {{ package_name }}.cli import app
 
-runner = CliRunner()
+
+def test_cli_help():
+    """Test that CLI shows help information."""
+    runner = CliRunner()
+    result = runner.invoke(app, ["--help"])
+
+    assert result.exit_code == 0
+    assert "{{ project_description }}" in result.stdout
+    assert "Usage:" in result.stdout
 
 
-def test_app_version() -> None:
-    """Test the --version option."""
+def test_cli_version():
+    """Test that CLI shows version information."""
+    runner = CliRunner()
     result = runner.invoke(app, ["--version"])
+
     assert result.exit_code == 0
-    assert f"{{ project_name }} Version: {__version__}" in result.stdout
+    assert "{{ package_name }}" in result.stdout
+    assert "version" in result.stdout
 
 
-def test_app_default_greeting() -> None:
-    """Test the default greeting."""
-    result = runner.invoke(app)
+def test_cli_no_args():
+    """Test CLI behavior with no arguments."""
+    runner = CliRunner()
+    result = runner.invoke(app, [])
+
+    # Should show help or at least not crash
     assert result.exit_code == 0
-    assert "Hello World" in result.stdout
 
 
-def test_app_custom_greeting() -> None:
-    """Test greeting with a custom name."""
-    result = runner.invoke(app, ["--name", "Alice"])
+def test_data_command_help():
+    """Test data command group help."""
+    runner = CliRunner()
+    result = runner.invoke(app, ["data", "--help"])
+
     assert result.exit_code == 0
-    assert "Hello Alice" in result.stdout
+    assert "data" in result.stdout.lower()
+    assert "Commands:" in result.stdout or "Usage:" in result.stdout
+
+
+def test_data_list_help():
+    """Test data list command help."""
+    runner = CliRunner()
+    result = runner.invoke(app, ["data", "list", "--help"])
+
+    assert result.exit_code == 0
+    assert "list" in result.stdout.lower()
+
+
+def test_data_process_help():
+    """Test data process command help."""
+    runner = CliRunner()
+    result = runner.invoke(app, ["data", "process", "--help"])
+
+    assert result.exit_code == 0
+    assert "process" in result.stdout.lower()
+
+{%- if include_config %}
+
+def test_config_command_help():
+    """Test config command group help."""
+    runner = CliRunner()
+    result = runner.invoke(app, ["config", "--help"])
+
+    assert result.exit_code == 0
+    assert "config" in result.stdout.lower()
+
+
+def test_config_init_help():
+    """Test config init command help."""
+    runner = CliRunner()
+    result = runner.invoke(app, ["config", "init", "--help"])
+
+    assert result.exit_code == 0
+    assert "init" in result.stdout.lower()
+
+
+def test_config_show_help():
+    """Test config show command help."""
+    runner = CliRunner()
+    result = runner.invoke(app, ["config", "show", "--help"])
+
+    assert result.exit_code == 0
+    assert "show" in result.stdout.lower()
+{%- endif %}
+
+
+def test_invalid_command():
+    """Test behavior with invalid command."""
+    runner = CliRunner()
+    result = runner.invoke(app, ["invalid_command"])
+
+    assert result.exit_code != 0
+    assert "No such command" in result.stdout or "Usage:" in result.stdout
+
+
+def test_data_list_nonexistent_directory():
+    """Test data list with non-existent directory."""
+    runner = CliRunner()
+    result = runner.invoke(app, ["data", "list", "/nonexistent/directory"])
+
+    assert result.exit_code != 0
+    assert "does not exist" in result.stdout
+
+
+def test_data_process_nonexistent_file():
+    """Test data process with non-existent file."""
+    runner = CliRunner()
+    result = runner.invoke(app, ["data", "process", "/nonexistent/file.json"])
+
+    assert result.exit_code != 0
+    assert "does not exist" in result.stdout
+
+
+def test_data_process_invalid_format():
+    """Test data process with invalid output format."""
+    runner = CliRunner()
+    result = runner.invoke(app, ["data", "process", "dummy.txt", "--format", "invalid"])
+
+    assert result.exit_code != 0
+    assert "Unsupported format" in result.stdout
+
+
+def test_data_list_current_directory():
+    """Test listing current directory."""
+    runner = CliRunner()
+    result = runner.invoke(app, ["data", "list", "."])
+
+    # Should not fail on current directory
+    assert result.exit_code == 0
+
+
+def test_cli_with_verbose_flag():
+    """Test CLI commands with verbose flag where applicable."""
+    runner = CliRunner()
+
+    # Test data process with verbose
+    result = runner.invoke(app, ["data", "process", "--help"])
+    assert result.exit_code == 0
+
+    # Check that verbose option is available
+    assert "--verbose" in result.stdout or "-v" in result.stdout

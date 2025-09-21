@@ -1,37 +1,75 @@
-"""Command-line interface for the {{ project_name }} package."""
+"""Main CLI application for {{ project_name }}."""
 
-from typing import Annotated
+from typing import Annotated, Optional
 
 import typer
+{%- if include_rich_output %}
+from rich.console import Console
+{%- endif %}
 
 from {{ package_name }} import __version__
+from {{ package_name }}.commands import config, data
 
-app = typer.Typer()
+{%- if include_rich_output %}
+console = Console()
+{%- endif %}
+
+# Create the main Typer app
+app = typer.Typer(
+    name="{{ package_name }}",
+    help="{{ project_description }}",
+    add_completion=False,
+    rich_markup_mode="rich" if {{ include_rich_output | lower }} else None,
+)
+
+# Add command groups
+{%- if include_config %}
+app.add_typer(config.app, name="config", help="Configuration management commands")
+{%- endif %}
+app.add_typer(data.app, name="data", help="Data processing commands")
 
 
 def version_callback(value: bool) -> None:
-    """Print the package version and exit."""
+    """Show version information and exit."""
     if value:
-        typer.echo(f"{{ project_name }} Version: {__version__}")
+{%- if include_rich_output %}
+        console.print(f"{{ package_name }} version {__version__}", style="bold green")
+{%- else %}
+        print(f"{{ package_name }} version {__version__}")
+{%- endif %}
         raise typer.Exit()
 
 
-@app.command()
+@app.callback()
 def main(
-    name: Annotated[str, typer.Option(help="The name to greet.")] = "World",
     version: Annotated[
-        bool,
+        Optional[bool],
         typer.Option(
             "--version",
+            "-v",
+            help="Show version information and exit",
             callback=version_callback,
-            is_flag=True,
             is_eager=True,
-            help="Show the application's version and exit.",
         ),
-    ] = False,
+    ] = None,
 ) -> None:
-    """A simple CLI that greets the user."""
-    typer.echo(f"Hello {name}")
+    """{{ project_name }} - {{ project_description }}
+
+    A modern Python CLI application built with Typer and Rich.
+
+    Examples:
+
+    {%- if include_config %}
+        {{ package_name }} config init    # Initialize configuration
+        {{ package_name }} config show    # Show current configuration
+    {%- endif %}
+        {{ package_name }} data list ./   # List files in directory
+        {{ package_name }} data process input.csv --format json
+
+    For help with specific commands, use:
+        {{ package_name }} <command> --help
+    """
+    pass
 
 
 if __name__ == "__main__":

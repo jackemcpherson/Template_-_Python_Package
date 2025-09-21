@@ -1,0 +1,194 @@
+"""Data processing commands for {{ package_name }}."""
+
+import json
+from pathlib import Path
+from typing import Annotated, Any, Optional
+
+import typer
+{%- if include_rich_output %}
+from rich.console import Console
+from rich.table import Table
+from rich.progress import Progress, SpinnerColumn, TextColumn
+{%- endif %}
+
+from {{ package_name }}.core import list_directory_info, process_data_file
+
+{%- if include_rich_output %}
+console = Console()
+{%- endif %}
+
+# Create the data command group
+app = typer.Typer(help="Data processing and file operations")
+
+
+@app.command()
+def list(
+    path: Annotated[str, typer.Argument(help="Directory path to list")] = "./",
+    show_hidden: Annotated[
+        bool, typer.Option("--hidden", "-h", help="Show hidden files")
+    ] = False,
+) -> None:
+    """List files in a directory with detailed information.
+
+    Displays files in a formatted table with size and modification time.
+
+    Args:
+        path: Directory path to list (default: current directory).
+        show_hidden: Whether to show hidden files.
+    """
+    try:
+        directory_path = Path(path)
+        if not directory_path.exists():
+            {%- if include_rich_output %}
+            console.print(f"Error: Directory '{path}' does not exist.", style="red")
+            {%- else %}
+            print(f"Error: Directory '{path}' does not exist.")
+            {%- endif %}
+            raise typer.Exit(1)
+
+        if not directory_path.is_dir():
+            {%- if include_rich_output %}
+            console.print(f"Error: '{path}' is not a directory.", style="red")
+            {%- else %}
+            print(f"Error: '{path}' is not a directory.")
+            {%- endif %}
+            raise typer.Exit(1)
+
+        files_info = list_directory_info(directory_path, show_hidden)
+
+{%- if include_rich_output %}
+        # Create a rich table for display
+        table = Table(title=f"Files in {path}")
+        table.add_column("Name", style="cyan", no_wrap=True)
+        table.add_column("Size", style="magenta", justify="right")
+        table.add_column("Type", style="green")
+        table.add_column("Modified", style="blue")
+
+        for file_info in files_info:
+            table.add_row(
+                file_info["name"],
+                file_info["size"],
+                file_info["type"],
+                file_info["modified"],
+            )
+
+        console.print(table)
+        console.print(f"\nTotal: {len(files_info)} items", style="bold")
+{%- else %}
+        # Simple text output
+        print(f"\nFiles in {path}:")
+        print("-" * 60)
+        for file_info in files_info:
+            print(f"{file_info['name']:<30} {file_info['size']:<12} {file_info['modified']}")
+        print(f"\nTotal: {len(files_info)} items")
+{%- endif %}
+
+    except PermissionError:
+        {%- if include_rich_output %}
+        console.print(f"Error: Permission denied accessing '{path}'.", style="red")
+        {%- else %}
+        print(f"Error: Permission denied accessing '{path}'.")
+        {%- endif %}
+        raise typer.Exit(1)
+
+
+@app.command()
+def process(
+    file_path: Annotated[str, typer.Argument(help="Path to the data file to process")],
+    output_format: Annotated[
+        str,
+        typer.Option(
+            "--format", "-f",
+            help="Output format",
+            case_sensitive=False,
+        ),
+    ] = "json",
+    output_file: Annotated[
+        Optional[str],
+        typer.Option("--output", "-o", help="Output file path (default: stdout)"),
+    ] = None,
+    verbose: Annotated[
+        bool, typer.Option("--verbose", "-v", help="Enable verbose output")
+    ] = False,
+) -> None:
+    """Process a data file and output in specified format.
+
+    Supports various input formats and can output results in different formats.
+
+    Args:
+        file_path: Path to the input data file.
+        output_format: Output format (json, yaml, csv).
+        output_file: Optional output file path.
+        verbose: Enable verbose output.
+    """
+    if output_format not in ["json", "yaml", "csv"]:
+        {%- if include_rich_output %}
+        console.print(f"Error: Unsupported format '{output_format}'. Use: json, yaml, csv", style="red")
+        {%- else %}
+        print(f"Error: Unsupported format '{output_format}'. Use: json, yaml, csv")
+        {%- endif %}
+        raise typer.Exit(1)
+
+    input_path = Path(file_path)
+    if not input_path.exists():
+        {%- if include_rich_output %}
+        console.print(f"Error: File '{file_path}' does not exist.", style="red")
+        {%- else %}
+        print(f"Error: File '{file_path}' does not exist.")
+        {%- endif %}
+        raise typer.Exit(1)
+
+    try:
+{%- if include_rich_output %}
+        # Show progress for long operations
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Processing file...", total=None)
+            result = process_data_file(input_path, output_format, verbose)
+            progress.update(task, completed=True)
+{%- else %}
+        if verbose:
+            print(f"Processing file: {file_path}")
+        result = process_data_file(input_path, output_format, verbose)
+{%- endif %}
+
+        # Handle output
+        if output_file:
+            output_path = Path(output_file)
+            with output_path.open("w", encoding="utf-8") as f:
+                if output_format == "json":
+                    json.dump(result, f, indent=2)
+                else:
+                    f.write(str(result))
+            {%- if include_rich_output %}
+            console.print(f"✓ Results written to {output_file}", style="green")
+            {%- else %}
+            print(f"Results written to {output_file}")
+            {%- endif %}
+        else:
+            # Output to stdout
+            if output_format == "json":
+{%- if include_rich_output %}
+                console.print_json(data=result)
+{%- else %}
+                print(json.dumps(result, indent=2))
+{%- endif %}
+            else:
+{%- if include_rich_output %}
+                console.print(result)
+{%- else %}
+                print(result)
+{%- endif %}
+
+    except Exception as e:
+        {%- if include_rich_output %}
+        console.print(f"Error processing file: {e}", style="red")
+        {%- else %}
+        print(f"Error processing file: {e}")
+        {%- endif %}
+        if verbose:
+            raise
+        raise typer.Exit(1)

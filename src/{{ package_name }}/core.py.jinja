@@ -1,0 +1,347 @@
+"""Core business logic for {{ package_name }}.
+
+This module contains the main business logic separate from CLI concerns.
+All functions here are pure where possible and raise exceptions for error conditions.
+"""
+
+import csv
+import json
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Union
+
+
+def list_directory_info(directory: Path, show_hidden: bool = False) -> List[Dict[str, str]]:
+    """List files in a directory with detailed information.
+
+    Args:
+        directory: Path to the directory to list.
+        show_hidden: Whether to include hidden files.
+
+    Returns:
+        List of dictionaries containing file information.
+
+    Raises:
+        PermissionError: If directory cannot be accessed.
+        FileNotFoundError: If directory does not exist.
+    """
+    if not directory.exists():
+        raise FileNotFoundError(f"Directory does not exist: {directory}")
+
+    if not directory.is_dir():
+        raise ValueError(f"Path is not a directory: {directory}")
+
+    files_info = []
+    try:
+        for item in directory.iterdir():
+            # Skip hidden files unless requested
+            if not show_hidden and item.name.startswith("."):
+                continue
+
+            # Get file stats
+            stat = item.stat()
+            modified = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M")
+
+            # Format file size
+            if item.is_file():
+                size_bytes = stat.st_size
+                size_str = format_file_size(size_bytes)
+                file_type = "file"
+            else:
+                size_str = "-"
+                file_type = "directory"
+
+            files_info.append({
+                "name": item.name,
+                "size": size_str,
+                "type": file_type,
+                "modified": modified,
+            })
+
+    except PermissionError as e:
+        raise PermissionError(f"Permission denied accessing directory: {directory}") from e
+
+    # Sort by name
+    files_info.sort(key=lambda x: x["name"].lower())
+    return files_info
+
+
+def format_file_size(size_bytes: int) -> str:
+    """Format file size in human-readable format.
+
+    Args:
+        size_bytes: Size in bytes.
+
+    Returns:
+        Formatted size string (e.g., "1.23 MB").
+    """
+    if size_bytes == 0:
+        return "0 B"
+
+    size_names = ["B", "KB", "MB", "GB", "TB"]
+    i = 0
+    size = float(size_bytes)
+
+    while size >= 1024.0 and i < len(size_names) - 1:
+        size /= 1024.0
+        i += 1
+
+    return f"{size:.1f} {size_names[i]}"
+
+
+def process_data_file(
+    file_path: Path,
+    output_format: str,
+    verbose: bool = False,
+) -> Union[Dict[str, Any], str]:
+    """Process a data file and return results in specified format.
+
+    Args:
+        file_path: Path to the input file.
+        output_format: Desired output format ('json', 'yaml', 'csv').
+        verbose: Whether to include verbose processing information.
+
+    Returns:
+        Processed data in the specified format.
+
+    Raises:
+        FileNotFoundError: If input file does not exist.
+        ValueError: If file format is not supported or output format is invalid.
+    """
+    if not file_path.exists():
+        raise FileNotFoundError(f"Input file does not exist: {file_path}")
+
+    if not file_path.is_file():
+        raise ValueError(f"Path is not a file: {file_path}")
+
+    # Determine input format from file extension
+    suffix = file_path.suffix.lower()
+
+    try:
+        if suffix == ".json":
+            data = load_json_file(file_path)
+        elif suffix == ".csv":
+            data = load_csv_file(file_path)
+        elif suffix in [".txt", ".log"]:
+            data = load_text_file(file_path)
+        else:
+            raise ValueError(f"Unsupported file format: {suffix}")
+
+        # Process the data (example transformations)
+        processed_data = transform_data(data, verbose)
+
+        # Format output
+        if output_format == "json":
+            return processed_data
+        elif output_format == "yaml":
+            # Simple YAML-like representation
+            return format_as_yaml(processed_data)
+        elif output_format == "csv":
+            return format_as_csv(processed_data)
+        else:
+            raise ValueError(f"Unsupported output format: {output_format}")
+
+    except (json.JSONDecodeError, csv.Error, UnicodeDecodeError) as e:
+        raise ValueError(f"Error parsing file {file_path}: {e}") from e
+
+
+def load_json_file(file_path: Path) -> Dict[str, Any]:
+    """Load data from a JSON file.
+
+    Args:
+        file_path: Path to the JSON file.
+
+    Returns:
+        Parsed JSON data.
+
+    Raises:
+        json.JSONDecodeError: If file contains invalid JSON.
+    """
+    with file_path.open("r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def load_csv_file(file_path: Path) -> List[Dict[str, str]]:
+    """Load data from a CSV file.
+
+    Args:
+        file_path: Path to the CSV file.
+
+    Returns:
+        List of dictionaries representing CSV rows.
+
+    Raises:
+        csv.Error: If file contains invalid CSV.
+    """
+    data = []
+    with file_path.open("r", encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            data.append(row)
+    return data
+
+
+def load_text_file(file_path: Path) -> Dict[str, Any]:
+    """Load data from a text file.
+
+    Args:
+        file_path: Path to the text file.
+
+    Returns:
+        Dictionary with file content and metadata.
+
+    Raises:
+        UnicodeDecodeError: If file cannot be decoded as UTF-8.
+    """
+    content = file_path.read_text(encoding="utf-8")
+    lines = content.splitlines()
+
+    return {
+        "content": content,
+        "lines": lines,
+        "line_count": len(lines),
+        "char_count": len(content),
+        "word_count": len(content.split()),
+    }
+
+
+def transform_data(data: Any, verbose: bool = False) -> Dict[str, Any]:
+    """Transform and analyze input data.
+
+    Args:
+        data: Input data to transform.
+        verbose: Whether to include detailed analysis.
+
+    Returns:
+        Transformed data with analysis.
+    """
+    result = {
+        "original_type": type(data).__name__,
+        "processed_at": datetime.now().isoformat(),
+        "data": data,
+    }
+
+    # Add analysis based on data type
+    if isinstance(data, dict):
+        result["analysis"] = {
+            "type": "dictionary",
+            "keys": list(data.keys()),
+            "key_count": len(data),
+        }
+        if verbose:
+            result["analysis"]["detailed_structure"] = analyze_dict_structure(data)
+
+    elif isinstance(data, list):
+        result["analysis"] = {
+            "type": "list",
+            "length": len(data),
+            "item_types": list(set(type(item).__name__ for item in data)),
+        }
+        if verbose and data:
+            result["analysis"]["sample_items"] = data[:3]  # First 3 items
+
+    else:
+        result["analysis"] = {
+            "type": "other",
+            "value_type": type(data).__name__,
+        }
+
+    return result
+
+
+def analyze_dict_structure(data: Dict[str, Any], max_depth: int = 3) -> Dict[str, Any]:
+    """Analyze the structure of a nested dictionary.
+
+    Args:
+        data: Dictionary to analyze.
+        max_depth: Maximum depth to analyze.
+
+    Returns:
+        Structure analysis.
+    """
+    if max_depth <= 0:
+        return {"truncated": True}
+
+    structure = {}
+    for key, value in data.items():
+        if isinstance(value, dict):
+            structure[key] = {
+                "type": "dict",
+                "keys": len(value),
+                "structure": analyze_dict_structure(value, max_depth - 1),
+            }
+        elif isinstance(value, list):
+            structure[key] = {
+                "type": "list",
+                "length": len(value),
+                "item_types": list(set(type(item).__name__ for item in value)),
+            }
+        else:
+            structure[key] = {
+                "type": type(value).__name__,
+                "value": str(value)[:50] + "..." if len(str(value)) > 50 else str(value),
+            }
+
+    return structure
+
+
+def format_as_yaml(data: Dict[str, Any]) -> str:
+    """Format data as YAML-like string.
+
+    Args:
+        data: Data to format.
+
+    Returns:
+        YAML-like string representation.
+    """
+    # Simple YAML-like formatting (not a full YAML implementation)
+    lines = []
+    for key, value in data.items():
+        if isinstance(value, dict):
+            lines.append(f"{key}:")
+            for sub_key, sub_value in value.items():
+                lines.append(f"  {sub_key}: {sub_value}")
+        elif isinstance(value, list):
+            lines.append(f"{key}:")
+            for item in value:
+                lines.append(f"  - {item}")
+        else:
+            lines.append(f"{key}: {value}")
+    return "\n".join(lines)
+
+
+def format_as_csv(data: Dict[str, Any]) -> str:
+    """Format data as CSV string.
+
+    Args:
+        data: Data to format.
+
+    Returns:
+        CSV string representation.
+    """
+    # Extract flattened key-value pairs
+    rows = []
+    if "data" in data and isinstance(data["data"], list):
+        # If data contains a list, format as table
+        list_data = data["data"]
+        if list_data and isinstance(list_data[0], dict):
+            # List of dictionaries - format as proper CSV
+            headers = list(list_data[0].keys())
+            rows.append(",".join(headers))
+            for item in list_data:
+                row = [str(item.get(header, "")) for header in headers]
+                rows.append(",".join(row))
+        else:
+            # Simple list - format as single column
+            rows.append("value")
+            for item in list_data:
+                rows.append(str(item))
+    else:
+        # Dictionary - format as key-value pairs
+        rows.append("key,value")
+        for key, value in data.items():
+            if isinstance(value, (dict, list)):
+                value = str(value)
+            rows.append(f"{key},{value}")
+
+    return "\n".join(rows)

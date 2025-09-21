@@ -1,0 +1,260 @@
+{% if include_config -%}
+"""Configuration management commands for {{ package_name }}."""
+
+import os
+import subprocess
+import sys
+from pathlib import Path
+from typing import Annotated, Optional
+
+import typer
+{%- if include_rich_output %}
+from rich.console import Console
+from rich.syntax import Syntax
+{%- endif %}
+
+from {{ package_name }}.config import get_config_path, init_config, load_config
+
+{%- if include_rich_output %}
+console = Console()
+{%- endif %}
+
+# Create the config command group
+app = typer.Typer(help="Configuration management")
+
+
+@app.command()
+def init(
+    force: Annotated[
+        bool, typer.Option("--force", "-f", help="Overwrite existing configuration")
+    ] = False,
+) -> None:
+    """Initialize configuration file with default values.
+
+    Creates a new configuration file at the default location with
+    sensible defaults. Use --force to overwrite existing configuration.
+
+    Args:
+        force: Whether to overwrite existing configuration file.
+    """
+    config_path = get_config_path()
+
+    if config_path.exists() and not force:
+        {%- if include_rich_output %}
+        console.print(
+            f"Configuration already exists at {config_path}",
+            style="yellow",
+        )
+        console.print("Use --force to overwrite", style="dim")
+        {%- else %}
+        print(f"Configuration already exists at {config_path}")
+        print("Use --force to overwrite")
+        {%- endif %}
+        raise typer.Exit(1)
+
+    try:
+        init_config(config_path, force)
+        {%- if include_rich_output %}
+        console.print(f"✓ Configuration initialized at {config_path}", style="green")
+        {%- else %}
+        print(f"Configuration initialized at {config_path}")
+        {%- endif %}
+    except Exception as e:
+        {%- if include_rich_output %}
+        console.print(f"Error initializing configuration: {e}", style="red")
+        {%- else %}
+        print(f"Error initializing configuration: {e}")
+        {%- endif %}
+        raise typer.Exit(1)
+
+
+@app.command()
+def show(
+    path: Annotated[
+        Optional[str],
+        typer.Option("--path", "-p", help="Path to configuration file"),
+    ] = None,
+) -> None:
+    """Display current configuration.
+
+    Shows the current configuration in a formatted view. If no path
+    is specified, uses the default configuration location.
+
+    Args:
+        path: Optional path to a specific configuration file.
+    """
+    try:
+        config_path = Path(path) if path else get_config_path()
+
+        if not config_path.exists():
+            {%- if include_rich_output %}
+            console.print(f"Configuration file not found: {config_path}", style="yellow")
+            console.print("Run 'config init' to create it", style="dim")
+            {%- else %}
+            print(f"Configuration file not found: {config_path}")
+            print("Run 'config init' to create it")
+            {%- endif %}
+            raise typer.Exit(1)
+
+        config = load_config(config_path)
+
+{%- if include_rich_output %}
+        # Display config file path
+        console.print(f"Configuration: {config_path}", style="bold blue")
+        console.print()
+
+        # Read and display the raw TOML content with syntax highlighting
+        toml_content = config_path.read_text(encoding="utf-8")
+        syntax = Syntax(toml_content, "toml", theme="github-dark", line_numbers=True)
+        console.print(syntax)
+{%- else %}
+        print(f"Configuration file: {config_path}")
+        print("-" * 50)
+        print(config_path.read_text(encoding="utf-8"))
+{%- endif %}
+
+    except Exception as e:
+        {%- if include_rich_output %}
+        console.print(f"Error reading configuration: {e}", style="red")
+        {%- else %}
+        print(f"Error reading configuration: {e}")
+        {%- endif %}
+        raise typer.Exit(1)
+
+
+@app.command()
+def edit(
+    editor: Annotated[
+        Optional[str],
+        typer.Option("--editor", "-e", help="Editor to use (default: $EDITOR or vim)"),
+    ] = None,
+    path: Annotated[
+        Optional[str],
+        typer.Option("--path", "-p", help="Path to configuration file"),
+    ] = None,
+) -> None:
+    """Open configuration file in an editor.
+
+    Opens the configuration file in the specified editor or the default
+    system editor. Creates the file if it doesn't exist.
+
+    Args:
+        editor: Editor command to use.
+        path: Optional path to a specific configuration file.
+    """
+    try:
+        config_path = Path(path) if path else get_config_path()
+
+        # Create config if it doesn't exist
+        if not config_path.exists():
+            {%- if include_rich_output %}
+            console.print(f"Configuration not found. Creating: {config_path}", style="yellow")
+            {%- else %}
+            print(f"Configuration not found. Creating: {config_path}")
+            {%- endif %}
+            init_config(config_path, force=True)
+
+        # Determine editor
+        editor_cmd = editor or os.environ.get("EDITOR", "vim")
+
+        {%- if include_rich_output %}
+        console.print(f"Opening {config_path} with {editor_cmd}...")
+        {%- else %}
+        print(f"Opening {config_path} with {editor_cmd}...")
+        {%- endif %}
+
+        # Open editor
+        result = subprocess.run([editor_cmd, str(config_path)], check=False)
+        if result.returncode != 0:
+            {%- if include_rich_output %}
+            console.print(f"Editor exited with code {result.returncode}", style="yellow")
+            {%- else %}
+            print(f"Editor exited with code {result.returncode}")
+            {%- endif %}
+
+    except FileNotFoundError:
+        {%- if include_rich_output %}
+        console.print(f"Editor '{editor_cmd}' not found", style="red")
+        {%- else %}
+        print(f"Editor '{editor_cmd}' not found")
+        {%- endif %}
+        raise typer.Exit(1)
+    except Exception as e:
+        {%- if include_rich_output %}
+        console.print(f"Error opening editor: {e}", style="red")
+        {%- else %}
+        print(f"Error opening editor: {e}")
+        {%- endif %}
+        raise typer.Exit(1)
+
+
+@app.command()
+def validate(
+    path: Annotated[
+        Optional[str],
+        typer.Option("--path", "-p", help="Path to configuration file"),
+    ] = None,
+) -> None:
+    """Validate configuration file syntax and values.
+
+    Checks the configuration file for syntax errors and validates
+    that all required fields are present with valid values.
+
+    Args:
+        path: Optional path to a specific configuration file.
+    """
+    try:
+        config_path = Path(path) if path else get_config_path()
+
+        if not config_path.exists():
+            {%- if include_rich_output %}
+            console.print(f"Configuration file not found: {config_path}", style="red")
+            {%- else %}
+            print(f"Configuration file not found: {config_path}")
+            {%- endif %}
+            raise typer.Exit(1)
+
+        # Try to load and validate
+        config = load_config(config_path)
+
+        # Basic validation (extend as needed)
+        errors = []
+
+        # Check for required sections
+        if "general" not in config:
+            errors.append("Missing [general] section")
+
+        # Check for valid values
+        if "general" in config:
+            general = config["general"]
+            if "output_format" in general:
+                valid_formats = ["json", "yaml", "csv"]
+                if general["output_format"] not in valid_formats:
+                    errors.append(f"Invalid output_format. Must be one of: {', '.join(valid_formats)}")
+
+        if errors:
+            {%- if include_rich_output %}
+            console.print("Configuration validation failed:", style="red bold")
+            for error in errors:
+                console.print(f"  • {error}", style="red")
+            {%- else %}
+            print("Configuration validation failed:")
+            for error in errors:
+                print(f"  - {error}")
+            {%- endif %}
+            raise typer.Exit(1)
+        else:
+            {%- if include_rich_output %}
+            console.print("✓ Configuration is valid", style="green")
+            {%- else %}
+            print("Configuration is valid")
+            {%- endif %}
+
+    except Exception as e:
+        {%- if include_rich_output %}
+        console.print(f"Error validating configuration: {e}", style="red")
+        {%- else %}
+        print(f"Error validating configuration: {e}")
+        {%- endif %}
+        raise typer.Exit(1)
+{%- endif %}

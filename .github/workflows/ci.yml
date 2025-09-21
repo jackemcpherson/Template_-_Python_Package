@@ -1,22 +1,26 @@
-name: Lint, Test, and Build
+name: Lint and Test
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "template-implementation" ]
   pull_request:
   workflow_dispatch:
 
 jobs:
   validate-template:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v1
@@ -24,12 +28,15 @@ jobs:
       - name: Generate project from template
         run: |
           uvx --from copier copier copy --trust --force \
-            -d project_name="CI App" \
-            -d project_description="Generated during CI." \
+            -d project_name="CI Test Package" \
+            -d project_description="Generated during CI to validate the template." \
             -d author_name="CI Bot" \
             -d author_email="ci@example.com" \
             -d initial_version="0.1.0" \
             -d github_username="ci-bot" \
+            -d python_version="3.12" \
+            -d include_rich_output=true \
+            -d include_config=true \
             . generated
 
       - name: Install dependencies
@@ -59,3 +66,9 @@ jobs:
       - name: Build package
         working-directory: generated
         run: uv run python -m build
+
+      - name: Validate CLI execution
+        working-directory: generated
+        run: |
+          uv run python -m ci_test_package --version
+          uv run python -m ci_test_package --help
