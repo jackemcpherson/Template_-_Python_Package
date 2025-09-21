@@ -1,47 +1,82 @@
-# copier.yml
+# Python Package Copier Template Configuration
+# See SPEC.md for full specification details
 
-_exclude:
+_templates_suffix: .jinja
+_subdirectory: .
+_skip_if_exists:
   - README.md
+  - LICENSE
 
-package_name:
-  type: str
-  default: "{{ project_name | lower | regex_replace('[^a-z0-9]+', '_') | trim('_') }}"
-  when: false
+# Template metadata
+_metadata:
+  version: "0.1.0"
+  description: "Modern Python package and CLI tool template"
 
-project_slug:
-  type: str
-  default: "{{ project_name | lower | regex_replace('[^a-z0-9]+', '-') | trim('-') }}"
-  when: false
-
-copyright_year:
-  type: str
-  default: "2025"
-  when: false
-
+# Template variables
 project_name:
   type: str
-  help: What is the name of your project?
+  help: "Human-readable project name (e.g., 'My Awesome CLI')"
   default: "My Awesome CLI"
 
 project_description:
   type: str
-  help: Provide a short description of the project.
-  default: "A modern Python CLI tool built with Typer."
+  help: "One-line description of your project"
+  validator: "{% if not project_description %}Required field{% endif %}"
 
 author_name:
   type: str
-  help: What is your full name?
+  help: "Full name of the author"
+  validator: "{% if not author_name %}Required field{% endif %}"
 
 author_email:
   type: str
-  help: What is your email address?
-
-initial_version:
-  type: str
-  help: What is the initial version of the project?
-  default: "0.1.0"
+  help: "Contact email address"
+  validator: "{% if not author_email %}Required field{% endif %}"
 
 github_username:
   type: str
-  help: What is your GitHub username?
-  default: "your-username"
+  help: "GitHub username or organization"
+  validator: "{% if not github_username %}Required field{% endif %}"
+
+initial_version:
+  type: str
+  help: "Starting version (semantic versioning)"
+  default: "0.1.0"
+
+python_version:
+  type: str
+  help: "Minimum Python version"
+  default: "3.12"
+  choices:
+    - "3.10"
+    - "3.11"
+    - "3.12"
+    - "3.13"
+
+include_rich_output:
+  type: bool
+  help: "Include Rich for enhanced terminal UI"
+  default: true
+
+include_config:
+  type: bool
+  help: "Include configuration file handling"
+  default: true
+
+# Computed variables (derived from user inputs)
+package_name: "{{ project_name | lower | replace(' ', '_') | replace('-', '_') | regex_replace('[^a-z0-9_]', '') }}"
+project_slug: "{{ project_name | lower | replace(' ', '-') | replace('_', '-') | regex_replace('[^a-z0-9-]', '') }}"
+copyright_year: "{{ '%Y' | strftime }}"
+
+# Files to exclude from generation
+_skip:
+  - SPEC.md
+  - README.md  # Template's README, not the generated one
+
+# Post-generation hooks
+_tasks:
+  - "echo 'Project {{ project_name }} created successfully!'"
+  - "echo 'Next steps:'"
+  - "echo '  1. cd {{ project_slug }}'"
+  - "echo '  2. make install'"
+  - "echo '  3. make test'"

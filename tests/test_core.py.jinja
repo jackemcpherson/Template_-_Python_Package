@@ -1,0 +1,330 @@
+"""Tests for core business logic."""
+
+import json
+from datetime import datetime
+from pathlib import Path
+
+import pytest
+
+from {{ package_name }}.core import (
+    format_file_size,
+    list_directory_info,
+    load_csv_file,
+    load_json_file,
+    load_text_file,
+    process_data_file,
+    transform_data,
+    format_as_yaml,
+    format_as_csv,
+    analyze_dict_structure,
+)
+
+
+class TestFileSize:
+    """Tests for file size formatting."""
+
+    def test_format_file_size_zero(self):
+        """Test formatting zero bytes."""
+        assert format_file_size(0) == "0 B"
+
+    def test_format_file_size_bytes(self):
+        """Test formatting byte values."""
+        assert format_file_size(512) == "512.0 B"
+        assert format_file_size(1000) == "1000.0 B"
+
+    def test_format_file_size_kilobytes(self):
+        """Test formatting kilobyte values."""
+        assert format_file_size(1024) == "1.0 KB"
+        assert format_file_size(2048) == "2.0 KB"
+        assert format_file_size(1536) == "1.5 KB"
+
+    def test_format_file_size_megabytes(self):
+        """Test formatting megabyte values."""
+        assert format_file_size(1024 * 1024) == "1.0 MB"
+        assert format_file_size(1024 * 1024 * 2.5) == "2.5 MB"
+
+    def test_format_file_size_gigabytes(self):
+        """Test formatting gigabyte values."""
+        assert format_file_size(1024 * 1024 * 1024) == "1.0 GB"
+
+
+class TestDirectoryListing:
+    """Tests for directory listing functionality."""
+
+    def test_list_directory_info_basic(self, sample_directory_structure):
+        """Test basic directory listing."""
+        files_info = list_directory_info(sample_directory_structure)
+
+        assert isinstance(files_info, list)
+        assert len(files_info) > 0
+
+        # Check structure of returned data
+        for file_info in files_info:
+            assert "name" in file_info
+            assert "size" in file_info
+            assert "type" in file_info
+            assert "modified" in file_info
+
+    def test_list_directory_info_with_hidden(self, sample_directory_structure):
+        """Test directory listing including hidden files."""
+        files_info_with_hidden = list_directory_info(sample_directory_structure, show_hidden=True)
+        files_info_without_hidden = list_directory_info(sample_directory_structure, show_hidden=False)
+
+        assert len(files_info_with_hidden) >= len(files_info_without_hidden)
+
+    def test_list_directory_info_nonexistent(self):
+        """Test listing non-existent directory."""
+        with pytest.raises(FileNotFoundError):
+            list_directory_info(Path("/nonexistent/directory"))
+
+    def test_list_directory_info_file_not_directory(self, sample_json_file):
+        """Test listing a file instead of directory."""
+        with pytest.raises(ValueError):
+            list_directory_info(sample_json_file)
+
+    def test_list_directory_info_sorting(self, sample_directory_structure):
+        """Test that directory listing is sorted."""
+        files_info = list_directory_info(sample_directory_structure)
+
+        # Extract names and check if sorted
+        names = [file_info["name"] for file_info in files_info]
+        sorted_names = sorted(names, key=str.lower)
+
+        assert names == sorted_names
+
+
+class TestFileLoading:
+    """Tests for file loading functions."""
+
+    def test_load_json_file(self, sample_json_file):
+        """Test loading JSON file."""
+        data = load_json_file(sample_json_file)
+
+        assert isinstance(data, dict)
+        assert "name" in data
+        assert "items" in data
+        assert isinstance(data["items"], list)
+
+    def test_load_json_file_invalid(self, temp_dir):
+        """Test loading invalid JSON file."""
+        invalid_json = temp_dir / "invalid.json"
+        invalid_json.write_text("{invalid json content")
+
+        with pytest.raises(json.JSONDecodeError):
+            load_json_file(invalid_json)
+
+    def test_load_csv_file(self, sample_csv_file):
+        """Test loading CSV file."""
+        data = load_csv_file(sample_csv_file)
+
+        assert isinstance(data, list)
+        assert len(data) > 0
+        assert isinstance(data[0], dict)
+        assert "id" in data[0]
+        assert "name" in data[0]
+
+    def test_load_text_file(self, sample_text_file):
+        """Test loading text file."""
+        data = load_text_file(sample_text_file)
+
+        assert isinstance(data, dict)
+        assert "content" in data
+        assert "lines" in data
+        assert "line_count" in data
+        assert "char_count" in data
+        assert "word_count" in data
+
+        assert data["line_count"] == len(data["lines"])
+        assert data["char_count"] == len(data["content"])
+
+
+class TestDataProcessing:
+    """Tests for data processing functionality."""
+
+    def test_process_json_file(self, sample_json_file):
+        """Test processing JSON file."""
+        result = process_data_file(sample_json_file, "json")
+
+        assert isinstance(result, dict)
+        assert "data" in result
+        assert "analysis" in result
+        assert "processed_at" in result
+
+    def test_process_csv_file(self, sample_csv_file):
+        """Test processing CSV file."""
+        result = process_data_file(sample_csv_file, "json")
+
+        assert isinstance(result, dict)
+        assert "data" in result
+        assert "analysis" in result
+
+    def test_process_text_file(self, sample_text_file):
+        """Test processing text file."""
+        result = process_data_file(sample_text_file, "json")
+
+        assert isinstance(result, dict)
+        assert "data" in result
+        assert "analysis" in result
+
+    def test_process_file_yaml_output(self, sample_json_file):
+        """Test processing file with YAML output."""
+        result = process_data_file(sample_json_file, "yaml")
+
+        assert isinstance(result, str)
+        assert ":" in result  # YAML-like format
+
+    def test_process_file_csv_output(self, sample_json_file):
+        """Test processing file with CSV output."""
+        result = process_data_file(sample_json_file, "csv")
+
+        assert isinstance(result, str)
+        assert "," in result or "\n" in result  # CSV-like format
+
+    def test_process_file_verbose(self, sample_json_file):
+        """Test processing file with verbose output."""
+        result_verbose = process_data_file(sample_json_file, "json", verbose=True)
+        result_normal = process_data_file(sample_json_file, "json", verbose=False)
+
+        # Verbose should potentially have more information
+        assert isinstance(result_verbose, dict)
+        assert isinstance(result_normal, dict)
+
+    def test_process_file_nonexistent(self):
+        """Test processing non-existent file."""
+        with pytest.raises(FileNotFoundError):
+            process_data_file(Path("/nonexistent/file.json"), "json")
+
+    def test_process_file_unsupported_format(self, sample_json_file):
+        """Test processing with unsupported output format."""
+        with pytest.raises(ValueError):
+            process_data_file(sample_json_file, "unsupported")
+
+    def test_process_file_unsupported_input(self, temp_dir):
+        """Test processing unsupported input file type."""
+        unsupported_file = temp_dir / "test.xyz"
+        unsupported_file.write_text("some content")
+
+        with pytest.raises(ValueError):
+            process_data_file(unsupported_file, "json")
+
+
+class TestDataTransformation:
+    """Tests for data transformation functions."""
+
+    def test_transform_data_dict(self):
+        """Test transforming dictionary data."""
+        data = {"key1": "value1", "key2": "value2"}
+        result = transform_data(data)
+
+        assert "original_type" in result
+        assert result["original_type"] == "dict"
+        assert "analysis" in result
+        assert result["analysis"]["type"] == "dictionary"
+
+    def test_transform_data_list(self):
+        """Test transforming list data."""
+        data = [1, 2, 3, "string", {"nested": "dict"}]
+        result = transform_data(data)
+
+        assert result["original_type"] == "list"
+        assert result["analysis"]["type"] == "list"
+        assert result["analysis"]["length"] == 5
+
+    def test_transform_data_verbose(self):
+        """Test transforming data with verbose output."""
+        data = {"nested": {"key": "value"}, "list": [1, 2, 3]}
+        result = transform_data(data, verbose=True)
+
+        assert "detailed_structure" in result["analysis"]
+
+    def test_analyze_dict_structure(self):
+        """Test dictionary structure analysis."""
+        data = {
+            "simple": "value",
+            "nested": {"inner": "value"},
+            "list": [1, 2, 3],
+        }
+
+        structure = analyze_dict_structure(data)
+
+        assert "simple" in structure
+        assert "nested" in structure
+        assert "list" in structure
+        assert structure["nested"]["type"] == "dict"
+        assert structure["list"]["type"] == "list"
+
+
+class TestFormatting:
+    """Tests for output formatting functions."""
+
+    def test_format_as_yaml(self):
+        """Test YAML formatting."""
+        data = {
+            "key1": "value1",
+            "key2": {"nested": "value"},
+            "key3": [1, 2, 3],
+        }
+
+        yaml_output = format_as_yaml(data)
+
+        assert isinstance(yaml_output, str)
+        assert "key1: value1" in yaml_output
+        assert "key2:" in yaml_output
+        assert "key3:" in yaml_output
+
+    def test_format_as_csv_dict(self):
+        """Test CSV formatting with dictionary data."""
+        data = {"key1": "value1", "key2": "value2"}
+
+        csv_output = format_as_csv(data)
+
+        assert isinstance(csv_output, str)
+        assert "key,value" in csv_output
+        assert "key1,value1" in csv_output
+
+    def test_format_as_csv_list(self):
+        """Test CSV formatting with list data."""
+        data = {"data": [{"id": 1, "name": "item1"}, {"id": 2, "name": "item2"}]}
+
+        csv_output = format_as_csv(data)
+
+        assert isinstance(csv_output, str)
+        assert "id,name" in csv_output
+        assert "1,item1" in csv_output
+
+
+class TestErrorHandling:
+    """Tests for error handling in core functions."""
+
+    def test_graceful_error_handling(self, temp_dir):
+        """Test that functions handle errors gracefully."""
+        # Create files that might cause issues
+        empty_file = temp_dir / "empty.json"
+        empty_file.write_text("")
+
+        # Should raise appropriate exceptions
+        with pytest.raises((json.JSONDecodeError, ValueError)):
+            load_json_file(empty_file)
+
+    def test_permission_error_handling(self, temp_dir):
+        """Test handling permission errors."""
+        # This test might not work on all systems
+        restricted_dir = temp_dir / "restricted"
+        restricted_dir.mkdir()
+
+        # Try to create a scenario where permission is denied
+        # Note: This is system-dependent and might not work in all environments
+        try:
+            import os
+            os.chmod(restricted_dir, 0o000)
+            with pytest.raises(PermissionError):
+                list_directory_info(restricted_dir)
+        except (OSError, PermissionError):
+            # If we can't set permissions, skip this test
+            pytest.skip("Cannot test permission errors on this system")
+        finally:
+            # Restore permissions for cleanup
+            try:
+                os.chmod(restricted_dir, 0o755)
+            except (OSError, PermissionError):
+                pass

@@ -1,0 +1,14 @@
+"""Command modules for {{ package_name }}."""
+
+# Import command modules to make them available
+{%- if include_config %}
+from . import config
+{%- endif %}
+from . import data
+
+__all__ = [
+{%- if include_config %}
+    "config",
+{%- endif %}
+    "data",
+]

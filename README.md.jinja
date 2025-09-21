@@ -2,48 +2,177 @@
 
 {{ project_description }}
 
-## Overview
+A modern Python CLI application built with [Typer](https://typer.tiangolo.com/) and [Rich](https://rich.readthedocs.io/).
 
-This project is a modern, production-ready Python package scaffolded from an opinionated Copier template. It uses a high-performance technology stack designed for developer productivity and robust code quality.
+## Features
 
-- **CLI Framework**: Typer
-- **Package Management**: uv
-- **Code Quality**: ruff, mypy, bandit
-- **Testing**: pytest with coverage
-- **Build System**: setuptools
-- **CI/CD**: GitHub Actions
+- 🚀 **Fast CLI** - Built with Typer for excellent performance and developer experience
+{%- if include_rich_output %}
+- 🎨 **Rich Output** - Beautiful terminal UI with tables, progress bars, and formatted text
+{%- endif %}
+{%- if include_config %}
+- ⚙️ **Configuration** - TOML-based configuration with init, show, and edit commands
+{%- endif %}
+- 📦 **Modern Tooling** - uv for dependency management, ruff for linting, mypy for type checking
+- 🧪 **Quality Assured** - Comprehensive testing with pytest, security scanning with bandit
+- 🔄 **CI/CD Ready** - GitHub Actions workflows for testing and publishing
 
-## Developer Experience
+## Installation
 
-This project includes a `Makefile` to streamline common development tasks.
-
-| Command | Description |
-| --- | --- |
-| `make install` | Creates a virtual environment and installs all project dependencies. |
-| `make lint` | Formats the code and runs the linter using ruff. |
-| `make test` | Executes the test suite with pytest and generates a coverage report. |
-| `make security` | Scans the codebase for security vulnerabilities using bandit. |
-| `make check-all` | Sequentially runs the lint, test, and security checks. |
-| `make run` | Runs the CLI application (pass args with `ARGS="--name Alice"`). |
-| `make build` | Builds the source distribution (sdist) and wheel. |
-| `make publish` | Builds and publishes the package to PyPI. |
-
-## Getting Started
-
-Install dependencies:
+### From PyPI (when published)
 
 ```bash
+pip install {{ project_slug }}
+```
+
+### From Source
+
+```bash
+git clone https://github.com/{{ github_username }}/{{ project_slug }}.git
+cd {{ project_slug }}
 make install
 ```
 
-Run the CLI:
+## Quick Start
 
 ```bash
-make run ARGS="--name World"
+# Show help
+{{ package_name }} --help
+
+# Check version
+{{ package_name }} --version
+
+{%- if include_config %}
+
+# Initialize configuration
+{{ package_name }} config init
+
+# Show current configuration
+{{ package_name }} config show
+{%- endif %}
+
+# Example commands
+{{ package_name }} data list ./
+{{ package_name }} data process input.csv --format json
 ```
 
-Run quality checks:
+## Development
+
+This project uses modern Python tooling:
+
+- **uv** - Fast Python package installer and resolver
+- **ruff** - Extremely fast Python linter and formatter
+- **mypy** - Static type checker
+- **pytest** - Testing framework
+- **bandit** - Security linter
+
+### Setup
 
 ```bash
+# Clone the repository
+git clone https://github.com/{{ github_username }}/{{ project_slug }}.git
+cd {{ project_slug }}
+
+# Install dependencies
+make install
+```
+
+### Common Tasks
+
+```bash
+# Run tests
+make test
+
+# Lint and format code
+make lint
+
+# Run security scan
+make security
+
+# Run all quality checks
 make check-all
+
+# Build package
+make build
+
+# Run the CLI locally
+make run ARGS="--help"
 ```
+
+## Commands
+
+### Global Options
+
+- `--version` - Show version information
+- `--help` - Show help message
+
+{%- if include_config %}
+
+### Configuration Commands
+
+- `{{ package_name }} config init` - Initialize configuration file
+- `{{ package_name }} config show` - Display current configuration
+- `{{ package_name }} config edit` - Open configuration in editor
+{%- endif %}
+
+### Data Commands
+
+- `{{ package_name }} data list <path>` - List files in directory with details
+- `{{ package_name }} data process <file>` - Process data file with various format options
+
+## Configuration
+
+{%- if include_config %}
+The application uses TOML configuration files stored at `~/.{{ package_name }}/config.toml`.
+
+Example configuration:
+
+```toml
+[general]
+output_format = "json"
+verbose = false
+
+[data]
+default_path = "./data"
+batch_size = 100
+```
+{%- else %}
+Configuration is handled through command-line arguments and environment variables.
+{%- endif %}
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Run quality checks (`make check-all`)
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+### Development Guidelines
+
+- Follow the existing code style (enforced by ruff)
+- Add type hints to all functions
+- Write tests for new functionality
+- Update documentation as needed
+- Ensure all quality checks pass
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Author
+
+**{{ author_name }}**
+
+- Email: {{ author_email }}
+- GitHub: [@{{ github_username }}](https://github.com/{{ github_username }})
+
+## Acknowledgments
+
+- [Typer](https://typer.tiangolo.com/) - For the excellent CLI framework
+{%- if include_rich_output %}
+- [Rich](https://rich.readthedocs.io/) - For beautiful terminal output
+{%- endif %}
+- [uv](https://github.com/astral-sh/uv) - For fast Python package management

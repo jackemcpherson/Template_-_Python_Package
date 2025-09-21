@@ -1,0 +1,167 @@
+"""Shared test fixtures for {{ package_name }}."""
+
+import json
+import tempfile
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+
+@pytest.fixture
+def temp_dir():
+    """Create a temporary directory for tests."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        yield Path(tmpdir)
+
+
+@pytest.fixture
+def sample_json_file(temp_dir):
+    """Create a sample JSON file for testing."""
+    data = {
+        "name": "test_data",
+        "version": "1.0.0",
+        "items": [
+            {"id": 1, "name": "item1", "value": 100},
+            {"id": 2, "name": "item2", "value": 200},
+            {"id": 3, "name": "item3", "value": 300},
+        ],
+        "metadata": {
+            "created": "2024-01-01T00:00:00Z",
+            "author": "test",
+        }
+    }
+
+    file_path = temp_dir / "sample.json"
+    with file_path.open("w") as f:
+        json.dump(data, f)
+
+    return file_path
+
+
+@pytest.fixture
+def sample_csv_file(temp_dir):
+    """Create a sample CSV file for testing."""
+    csv_content = """id,name,value,category
+1,item1,100,A
+2,item2,200,B
+3,item3,300,A
+4,item4,400,C
+5,item5,500,B"""
+
+    file_path = temp_dir / "sample.csv"
+    file_path.write_text(csv_content)
+    return file_path
+
+
+@pytest.fixture
+def sample_text_file(temp_dir):
+    """Create a sample text file for testing."""
+    text_content = """This is a test file.
+It contains multiple lines.
+Each line has different content.
+Some lines are longer than others.
+This is the last line."""
+
+    file_path = temp_dir / "sample.txt"
+    file_path.write_text(text_content)
+    return file_path
+
+
+@pytest.fixture
+def sample_directory_structure(temp_dir):
+    """Create a sample directory structure for testing."""
+    # Create subdirectories
+    (temp_dir / "subdir1").mkdir()
+    (temp_dir / "subdir2").mkdir()
+    (temp_dir / ".hidden").mkdir()
+
+    # Create files
+    (temp_dir / "file1.txt").write_text("Content of file1")
+    (temp_dir / "file2.py").write_text("# Python file")
+    (temp_dir / "subdir1" / "nested.json").write_text('{"nested": true}')
+    (temp_dir / ".hidden_file").write_text("Hidden content")
+
+    # Create some files with different sizes
+    (temp_dir / "small.txt").write_text("Small")
+    (temp_dir / "large.txt").write_text("Large file content " * 1000)
+
+    return temp_dir
+
+{%- if include_config %}
+
+@pytest.fixture
+def sample_config_data():
+    """Sample configuration data for testing."""
+    return {
+        "general": {
+            "output_format": "json",
+            "verbose": False,
+            "color": True,
+        },
+        "data": {
+            "default_path": "./test_data",
+            "batch_size": 50,
+            "max_file_size": "5MB",
+        },
+        "ui": {
+            "table_style": "grid",
+            "progress_bar": True,
+            "timestamps": False,
+        },
+    }
+
+
+@pytest.fixture
+def config_file(temp_dir, sample_config_data):
+    """Create a temporary configuration file."""
+    import toml
+
+    config_path = temp_dir / "config.toml"
+    with config_path.open("w") as f:
+        toml.dump(sample_config_data, f)
+
+    return config_path
+{%- endif %}
+
+
+@pytest.fixture
+def mock_console():
+    """Mock Rich Console for testing output."""
+    from unittest.mock import Mock
+    return Mock()
+
+
+@pytest.fixture
+def cli_runner():
+    """Typer CLI runner for testing commands."""
+    from typer.testing import CliRunner
+    return CliRunner()
+
+
+# Test data generators
+def create_test_data(data_type: str, size: int = 10) -> dict[str, Any]:
+    """Generate test data of specified type and size."""
+    if data_type == "list":
+        return {
+            "data": [{"id": i, "value": f"item_{i}"} for i in range(size)]
+        }
+    elif data_type == "dict":
+        return {
+            "data": {f"key_{i}": f"value_{i}" for i in range(size)}
+        }
+    elif data_type == "mixed":
+        return {
+            "list_data": list(range(size)),
+            "dict_data": {f"key_{i}": i * 10 for i in range(size)},
+            "string_data": "test string",
+            "number_data": 42,
+        }
+    else:
+        return {"data": "simple_data"}
+
+
+# Pytest markers for different test categories
+pytestmark = [
+    pytest.mark.filterwarnings("ignore::DeprecationWarning"),
+]
