@@ -132,7 +132,7 @@ def is_debug_mode() -> bool:
         True if debug mode is enabled.
     """
     import os
-    debug_vars = ['DEBUG', 'PYTHONDEBUG', f'{{{package_name.upper()}}}_DEBUG']
+    debug_vars = ['DEBUG', 'PYTHONDEBUG', f'{{ package_name.upper() }}_DEBUG']
     return any(os.environ.get(var, '').lower() in ('1', 'true', 'yes') for var in debug_vars)
 
 

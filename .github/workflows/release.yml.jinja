@@ -21,10 +21,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python ${% raw %}{{ matrix.python-version }}{% endraw %}
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${% raw %}{{ matrix.python-version }}{% endraw %}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v1
@@ -68,5 +68,5 @@ jobs:
       - name: Publish to PyPI
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+          TWINE_PASSWORD: ${% raw %}{{ secrets.PYPI_TOKEN }}{% endraw %}
         run: uv run twine upload dist/*
