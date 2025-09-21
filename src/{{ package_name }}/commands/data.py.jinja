@@ -104,7 +104,7 @@ def process(
         ),
     ] = "json",
     output_file: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--output", "-o", help="Output file path (default: stdout)"),
     ] = None,
     verbose: Annotated[

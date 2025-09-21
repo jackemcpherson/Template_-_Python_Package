@@ -44,6 +44,9 @@ dev = [
     "bandit>=1.7.0",
     "build>=1.0.0",
     "twine>=4.0.0",
+{%- if include_config %}
+    "types-toml>=0.10.0",
+{%- endif %}
 ]
 test = [
     "pytest>=8.0.0",

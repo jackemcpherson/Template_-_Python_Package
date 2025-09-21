@@ -1,6 +1,6 @@
 """Main CLI application for {{ project_name }}."""
 
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
 {%- if include_rich_output %}
@@ -19,7 +19,7 @@ app = typer.Typer(
     name="{{ package_name }}",
     help="{{ project_description }}",
     add_completion=False,
-    rich_markup_mode="rich" if {{ include_rich_output | lower }} else None,
+    rich_markup_mode="rich" if {{ include_rich_output }} else None,
 )
 
 # Add command groups
@@ -43,7 +43,7 @@ def version_callback(value: bool) -> None:
 @app.callback()
 def main(
     version: Annotated[
-        Optional[bool],
+        bool | None,
         typer.Option(
             "--version",
             "-v",

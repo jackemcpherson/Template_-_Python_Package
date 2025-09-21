@@ -3,9 +3,8 @@
 
 import os
 import subprocess
-import sys
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
 {%- if include_rich_output %}
@@ -65,13 +64,13 @@ def init(
         {%- else %}
         print(f"Error initializing configuration: {e}")
         {%- endif %}
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
 
 @app.command()
 def show(
     path: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--path", "-p", help="Path to configuration file"),
     ] = None,
 ) -> None:
@@ -96,7 +95,7 @@ def show(
             {%- endif %}
             raise typer.Exit(1)
 
-        config = load_config(config_path)
+        _ = load_config(config_path)  # Validate config file
 
 {%- if include_rich_output %}
         # Display config file path
@@ -125,11 +124,11 @@ def show(
 @app.command()
 def edit(
     editor: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--editor", "-e", help="Editor to use (default: $EDITOR or vim)"),
     ] = None,
     path: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--path", "-p", help="Path to configuration file"),
     ] = None,
 ) -> None:
@@ -191,7 +190,7 @@ def edit(
 @app.command()
 def validate(
     path: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--path", "-p", help="Path to configuration file"),
     ] = None,
 ) -> None:

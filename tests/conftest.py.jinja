@@ -3,7 +3,7 @@
 import json
 import tempfile
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
 
 import pytest
 
@@ -140,7 +140,7 @@ def cli_runner():
 
 
 # Test data generators
-def create_test_data(data_type: str, size: int = 10) -> Dict[str, Any]:
+def create_test_data(data_type: str, size: int = 10) -> dict[str, Any]:
     """Generate test data of specified type and size."""
     if data_type == "list":
         return {
@@ -152,7 +152,7 @@ def create_test_data(data_type: str, size: int = 10) -> Dict[str, Any]:
         }
     elif data_type == "mixed":
         return {
-            "list_data": [i for i in range(size)],
+            "list_data": list(range(size)),
             "dict_data": {f"key_{i}": i * 10 for i in range(size)},
             "string_data": "test string",
             "number_data": 42,

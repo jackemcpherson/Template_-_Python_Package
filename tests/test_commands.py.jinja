@@ -1,7 +1,6 @@
 """Tests for command modules."""
 
 import json
-from pathlib import Path
 from typer.testing import CliRunner
 
 from {{ package_name }}.cli import app
@@ -130,7 +129,6 @@ class TestConfigCommands:
 
     def test_config_init(self, temp_dir):
         """Test configuration initialization."""
-        config_path = temp_dir / "config.toml"
         runner = CliRunner()
 
         # Mock the config path by setting environment

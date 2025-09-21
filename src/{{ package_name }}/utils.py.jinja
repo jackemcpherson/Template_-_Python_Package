@@ -3,10 +3,10 @@
 import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 
-def validate_file_path(path: Union[str, Path], must_exist: bool = True) -> Path:
+def validate_file_path(path: str | Path, must_exist: bool = True) -> Path:
     """Validate and normalize a file path.
 
     Args:
@@ -158,7 +158,7 @@ def setup_logging(verbose: bool = False, debug: bool = False) -> None:
     logging.getLogger('requests').setLevel(logging.WARNING)
 
 
-def get_version_info() -> Dict[str, Any]:
+def get_version_info() -> dict[str, Any]:
     """Get version information for debugging.
 
     Returns:
@@ -218,7 +218,7 @@ def format_duration(seconds: float) -> str:
         return f"{hours:.1f}h"
 
 
-def ensure_directory(path: Union[str, Path]) -> Path:
+def ensure_directory(path: str | Path) -> Path:
     """Ensure a directory exists, creating it if necessary.
 
     Args:
@@ -235,7 +235,7 @@ def ensure_directory(path: Union[str, Path]) -> Path:
     return path_obj
 
 
-def read_file_safely(file_path: Union[str, Path], encoding: str = "utf-8") -> Optional[str]:
+def read_file_safely(file_path: str | Path, encoding: str = "utf-8") -> str | None:
     """Read a file safely, returning None if it cannot be read.
 
     Args:
@@ -252,7 +252,7 @@ def read_file_safely(file_path: Union[str, Path], encoding: str = "utf-8") -> Op
 
 
 def write_file_safely(
-    file_path: Union[str, Path],
+    file_path: str | Path,
     content: str,
     encoding: str = "utf-8",
     backup: bool = True,
